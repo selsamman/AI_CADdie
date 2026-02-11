@@ -5,12 +5,11 @@
 - Produce `scene.json` that conforms to `schemas/scene.schema.json`
 - If ambiguous, ask questions and propose a spec patch.
 
-## Room
-- regular octagon, span(flat-to-flat): 167 in
-- pit depth: 13.75 in
 
 ## Objects
 (Describe objects.)
 
-## Framing
-(Describe arrays, trim, intersections, etc.)
+## Note
+spec_sample is what we originally started with where the LLM tried to do 
+everything.  It will need to evolve into something without all of the global 
+rules
