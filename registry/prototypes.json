@@ -30,18 +30,5 @@
       "WestVertex",
       "NorthWestVertex"
     ]
-  },
-  {
-    "name": "dim_lumber_member",
-    "schema_path": "schemas/prototypes/dim_lumber_member.schema.json",
-    "resolver": "engine.prototypes.dim_lumber_member.resolve",
-    "features": [
-      "edges:start",
-      "edges:end",
-      "edges:left",
-      "edges:right",
-      "faces:top",
-      "faces:bottom"
-    ]
   }
 ]

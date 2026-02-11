@@ -6,6 +6,97 @@ Poly = List[Point]
 
 EPS = 1e-9
 
+def dot(ax: float, ay: float, bx: float, by: float) -> float:
+    return ax*bx + ay*by
+
+def clip_halfplane(subject: Poly, p0: Point, n: Point, keep_leq: bool = True) -> Poly:
+    """Clip a (possibly non-convex) polygon against a half-plane.
+
+    Half-plane is defined by: dot((p - p0), n) <= 0 if keep_leq else >= 0.
+    Uses a Sutherland–Hodgman-style pass over subject edges.
+    """
+    if not subject:
+        return []
+    nx, ny = n
+    x0, y0 = p0
+
+    def inside(p: Point) -> bool:
+        px, py = p
+        v = dot(px - x0, py - y0, nx, ny)
+        return v <= EPS if keep_leq else v >= -EPS
+
+    def intersect(a: Point, b: Point) -> Point:
+        ax, ay = a
+        bx, by = b
+        dax, day = bx-ax, by-ay
+        denom = dot(dax, day, nx, ny)
+        if abs(denom) < EPS:
+            return b
+        t = -dot(ax - x0, ay - y0, nx, ny) / denom
+        t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
+        return (ax + t*dax, ay + t*day)
+
+    out: Poly = []
+    prev = subject[-1]
+    prev_in = inside(prev)
+    for cur in subject:
+        cur_in = inside(cur)
+        if cur_in:
+            if not prev_in:
+                out.append(intersect(prev, cur))
+            out.append(cur)
+        else:
+            if prev_in:
+                out.append(intersect(prev, cur))
+        prev, prev_in = cur, cur_in
+    return out
+
+def ray_segment_intersection(ro: Point, rd: Point, a: Point, b: Point) -> Tuple[bool, float, Point]:
+    """Intersect ray (ro + t*rd, t>=0) with segment a->b.
+
+    Returns (hit, t_ray, point). If no hit, hit=False.
+    """
+    rdx, rdy = rd
+    ax, ay = a
+    bx, by = b
+    sx, sy = bx-ax, by-ay
+
+    # Solve ro + t*rd = a + u*(b-a)
+    den = _cross(rdx, rdy, sx, sy)
+    if abs(den) < EPS:
+        return (False, 0.0, ro)
+
+    rx, ry = ro
+    t = _cross(ax-rx, ay-ry, sx, sy) / den
+    u = _cross(ax-rx, ay-ry, rdx, rdy) / den
+    if t >= -EPS and u >= -EPS and u <= 1.0 + EPS:
+        px = rx + t*rdx
+        py = ry + t*rdy
+        return (True, t, (px, py))
+    return (False, 0.0, ro)
+
+def first_ray_polygon_hit(ro: Point, rd: Point, poly: Poly) -> Tuple[bool, float, Point]:
+    """Return the first intersection of a ray with a polygon boundary."""
+    best_t = None
+    best_p: Point = ro
+    n = len(poly)
+    if n < 2:
+        return (False, 0.0, ro)
+    for i in range(n):
+        a = poly[i]
+        b = poly[(i+1) % n]
+        hit, t, p = ray_segment_intersection(ro, rd, a, b)
+        if not hit:
+            continue
+        if t < EPS:
+            continue
+        if best_t is None or t < best_t:
+            best_t = t
+            best_p = p
+    if best_t is None:
+        return (False, 0.0, ro)
+    return (True, float(best_t), best_p)
+
 def signed_area(poly: Poly) -> float:
     if not poly:
         return 0.0
