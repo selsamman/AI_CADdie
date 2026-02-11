@@ -6,33 +6,32 @@ REPO = Path(__file__).resolve().parents[1]
 
 class TestRepoSmoke(unittest.TestCase):
     def test_schema_file_exists(self):
-        p = REPO / "schemas" / "scene.schema.json"
-        self.assertTrue(p.exists(), "schemas/scene.schema.json missing")
+        p = REPO / "schemas" / "scene" / "scene.schema.json"
+        self.assertTrue(p.exists(), "schemas/scene/scene.schema.json missing")
         data = json.loads(p.read_text(encoding="utf-8"))
-        # minimal sanity checks
         self.assertIn("$schema", data)
         self.assertIn("type", data)
 
     def test_example_scene_loads(self):
-        p = REPO / "examples" / "sample_scene.json"
-        self.assertTrue(p.exists(), "examples/sample_scene.json missing")
+        p = REPO / "examples" / "scene_example.json"
+        self.assertTrue(p.exists(), "examples/scene_example.json missing")
         scene = json.loads(p.read_text(encoding="utf-8"))
-        # minimal required keys for current engine/build.py
-        self.assertEqual(scene.get("version"), "0.1")
-        self.assertIn("room", scene)
+        self.assertEqual(scene.get("schema_version"), "0.2")
+        self.assertIn("anchor_id", scene)
         self.assertIn("objects", scene)
-        self.assertIn("ops", scene)
+        self.assertIn("operators", scene)
 
-    def test_build_runs_and_emits_scad(self):
-        scene_path = REPO / "examples" / "sample_scene.json"
+    def test_run_emits_scad(self):
+        scene_path = REPO / "examples" / "scene_example.json"
         out_path = REPO / "tests" / "_out.scad"
         if out_path.exists():
             out_path.unlink()
 
-        cmd = [sys.executable, str(REPO / "engine" / "build.py"), str(scene_path), "--out", str(out_path)]
+        # Run as a module so package imports work reliably.
+        cmd = [sys.executable, "-m", "engine.run", str(scene_path), str(out_path)]
         proc = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True)
         if proc.returncode != 0:
-            raise AssertionError(f"build.py failed\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+            raise AssertionError(f"engine.run failed\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
 
         self.assertTrue(out_path.exists(), "out.scad was not created")
         txt = out_path.read_text(encoding="utf-8")

@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import json, sys
 from pathlib import Path
+
+# Allow running as `python engine/run.py` as well as `python -m engine.run`
+if __package__ is None or __package__ == "":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from engine.registry import load_registries
 from engine.scene import build_scene
 from engine.scad import emit_scad
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python engine/run.py scene.json out.scad")
+        print("Usage: python -m engine.run scene.json out.scad")
         raise SystemExit(2)
     scene_path = Path(sys.argv[1])
     out_path = Path(sys.argv[2])
