@@ -4,9 +4,9 @@
   "required": [
     "op",
     "source_object_id",
+    "target_object_id",
     "source_edge",
-    "direction",
-    "target_object_id"
+    "direction"
   ],
   "properties": {
     "op": {
@@ -23,8 +23,7 @@
       "minItems": 2,
       "maxItems": 2,
       "items": {
-        "type": "integer",
-        "minimum": 0
+        "type": "integer"
       }
     },
     "direction": {
@@ -36,5 +35,5 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }
