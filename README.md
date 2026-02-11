@@ -1,10 +1,17 @@
-# DescriptiveCAD v0.2 Bootstrap (minimal)
+# DescriptiveCAD (Prototype v0.1)
 
-This ZIP establishes the repo structure and contracts:
+Prototype pipeline: **canonical Scene IR (JSON)** → deterministic Python build → OpenSCAD.
 
-- `registry/` lists available prototypes and operators.
-- `schemas/` contains JSON Schema for prototype params and operator invocations.
-- `engine/` contains a tiny Python runner that reads `scene.json` and emits `out.scad`.
+## Included
+- Scene IR schema: `schemas/scene.schema.json`
+- Engine: `engine/build.py`
+- Example: `examples/sample_scene.json`
 
-**NOTE:** `clip_to_object` is currently a placeholder (no polygon clipping yet).
-The purpose of this bootstrap is to lock down taxonomy + file layout first.
+## Run example
+```bash
+python engine/build.py examples/sample_scene.json --out out.scad
+```
+Open `out.scad` in OpenSCAD.
+
+## Note
+This repo does not include the LLM front-end yet. The LLM is expected to produce `scene.json`.

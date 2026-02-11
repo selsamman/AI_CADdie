@@ -3,3 +3,9 @@
 3. Run python engine/build.py scene.json --out result.scad
 4. Write the file to result.scad and return its downloadable link.
 5. Do not generate any other output unless there is an error
+
+## Run tests first
+
+```bash
+python -m unittest discover -s tests -v
+```
