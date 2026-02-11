@@ -1,14 +1,16 @@
 from copy import deepcopy
-from engine.prototypes import poly_extrude, regular_octagon_boundary
+from engine.prototypes import poly_extrude, regular_octagon_boundary, dim_lumber_member
 from engine.geom import clip_convex
 
-def _resolve_object(obj):
+def _resolve_object(obj, registries):
     proto = obj["prototype"]
     params = obj.get("params", {})
     if proto == "poly_extrude":
         geom = poly_extrude.resolve(params)
     elif proto == "regular_octagon_boundary":
         geom = regular_octagon_boundary.resolve(params)
+    elif proto == "dim_lumber_member":
+        geom = dim_lumber_member.resolve(params, registries)
     else:
         raise ValueError(f"Unknown prototype: {proto}")
     out = deepcopy(obj)
@@ -17,7 +19,7 @@ def _resolve_object(obj):
 
 def build_scene(scene: dict, registries: dict) -> dict:
     # Resolve prototypes into explicit geometry
-    objects = {o["id"]: _resolve_object(o) for o in scene.get("objects", [])}
+    objects = {o["id"]: _resolve_object(o, registries) for o in scene.get("objects", [])}
 
     # Execute operators on resolved geometry (v0.2 supports clip_to_object for convex clippers)
     for op in scene.get("operators", []):
