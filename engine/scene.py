@@ -24,11 +24,63 @@ def _resolve_object(obj, registries):
     return out
 
 def build_scene(scene: dict, registries: dict) -> dict:
-    # Resolve prototypes into explicit geometry
-    objects = {o["id"]: _resolve_object(o, registries) for o in scene.get("objects", [])}
+    # Split objects into concrete objects vs operator-generated templates.
+    templates = {o["id"]: deepcopy(o) for o in scene.get("objects", []) if str(o.get("role","")).lower() == "template"}
+    concrete_list = [o for o in scene.get("objects", []) if str(o.get("role","")).lower() != "template"]
+
+    # Resolve prototypes into explicit geometry (concrete objects only)
+    objects = {o["id"]: _resolve_object(o, registries) for o in concrete_list}
 
     # Execute operators on resolved geometry
     for op in scene.get("operators", []):
+        if op.get("op") == "distribute_evenly_between":
+            template_id = op["template_object_id"]
+            between = op["between_object_ids"]
+            count = int(op["count"])
+            id_prefix = op.get("id_prefix", f"{template_id}_")
+            if template_id not in templates:
+                raise ValueError(f"template_object_id not found (role=template): {template_id}")
+            if not (isinstance(between, list) and len(between) == 2):
+                raise ValueError("between_object_ids must be [id_a, id_b]")
+            a_id, b_id = between[0], between[1]
+            if a_id not in objects or b_id not in objects:
+                raise ValueError("between_object_ids must reference concrete objects already in scene")
+
+            # Anchor points: prefer placement.start from source params, else centroid of footprint.
+            def _anchor_pt(obj):
+                params = obj.get("params", {})
+                plc = params.get("placement", {})
+                start = plc.get("start")
+                if isinstance(start, list) and len(start) == 2:
+                    return float(start[0]), float(start[1])
+                fp = obj.get("geom", {}).get("footprint") or []
+                if fp:
+                    xs = [p[0] for p in fp]; ys = [p[1] for p in fp]
+                    return sum(xs)/len(xs), sum(ys)/len(ys)
+                raise ValueError("Cannot determine anchor point for distribute_evenly_between")
+
+            ax, ay = _anchor_pt(objects[a_id])
+            bx, by = _anchor_pt(objects[b_id])
+
+            # Generate count objects at equally spaced points between A and B (excluding endpoints).
+            for i in range(1, count+1):
+                t = i / (count + 1.0)
+                sx = ax + (bx - ax) * t
+                sy = ay + (by - ay) * t
+
+                inst = deepcopy(templates[template_id])
+                inst.pop("role", None)
+                inst["id"] = f"{id_prefix}{i}"
+                inst.setdefault("params", {})
+                inst["params"].setdefault("placement", {})
+
+                # placement.start may be omitted in template; it is provided by this operator.
+                inst["params"]["placement"]["start"] = [sx, sy]
+
+                # Resolve and insert
+                objects[inst["id"]] = _resolve_object(inst, registries)
+            continue
+
         if op.get("op") == "clip_to_object":
             clip_id = op["clip_object_id"]
             target_ids = op.get("target_ids", [])
