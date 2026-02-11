@@ -1,0 +1,7 @@
+[
+  {
+    "name": "clip_to_object",
+    "schema_path": "schemas/operators/clip_to_object.schema.json",
+    "handler": "engine.operators.clip_to_object.apply"
+  }
+]

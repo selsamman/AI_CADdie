@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "span_flat_to_flat_in",
+    "origin",
+    "north_wall_normal"
+  ],
+  "properties": {
+    "span_flat_to_flat_in": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "origin": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
+    "north_wall_normal": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
+    "wall_height_in": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "additionalProperties": false
+}
