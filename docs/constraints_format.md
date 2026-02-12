@@ -1,4 +1,4 @@
-# Constraints Scene Format (LLM-facing) – v0.1
+# Constraints Scene Format (LLM-facing) – v0.2
 
 This document describes the **LLM-facing** scene format (`scene_constraints.json`) that is compiled into the internal `scene.json`.
 
@@ -31,7 +31,7 @@ Directions (plan): `N NE E SE S SW W NW`
 
 Axes: `N-S`, `E-W`, `NE-SW`, `NW-SE`
 
-## 4. Current constraint vocabulary (implemented)
+## 4. Constraint vocabulary (implemented)
 
 This is an incremental implementation. The following kinds are supported today:
 
@@ -60,11 +60,40 @@ Defines an extent between two features along the member axis.
 }
 ```
 
-### 4.3 `placement_constraints` for `dim_lumber_member`
+### 4.3 `point_on_edge_from_vertex`
+
+Defines a point on an edge (a finite segment), measured from a named vertex.
+
+Example: “a point on the North East Wall 49 inches from the North Vertex”
+
+```json
+{
+  "kind": "point_on_edge_from_vertex",
+  "edge": "Octagon.wall:NorthEast",
+  "vertex": "Octagon.vertex:North",
+  "distance_in": 49
+}
+```
+
+### 4.4 `ray_hit`
+
+Defines an extent by casting a ray from the origin (in the member's direction) until it hits a target feature.
+
+`until` may be a segment feature (e.g., a wall or face) or a polygon feature (currently: `*.footprint`).
+
+```json
+{
+  "kind": "ray_hit",
+  "until": "HearthSleeper.footprint"
+}
+```
+
+### 4.5 `placement_constraints` for `dim_lumber_member`
 
 ```json
 "placement_constraints": {
   "axis": "E-W",
+  "direction": "E",
   "origin": { "... offset_from_feature ..." },
   "extent": { "... span_between_hits ..." }
 }
@@ -73,7 +102,7 @@ Defines an extent between two features along the member axis.
 The compiler expands this into internal numeric placement:
 
 - `start`: `[x, y]`
-- `direction`: `[dx, dy]` (unit)
+- `direction`: one of `N NE E SE S SW W NW`
 - `length`: inches
 
 ## 5. Example: “Hearth Sleeper”
@@ -110,11 +139,10 @@ Constraints form (member object excerpt):
 
 ## 6. What’s next
 
-Planned additions (not yet implemented):
+Planned additions:
 
-- point-on-wall-at-distance-from-vertex
-- ray-hit-until-feature (for “extends to …” / “ends where it intersects …”)
-- intersection extents that trim to polygons (footprints), not just supporting lines
 - `unresolved` records for safe LLM failure
+- richer feature catalogs (more surfaces/edges for more prototypes)
+- trimming against enclosing room boundary ("clip to room")
 
 Keep the LLM-facing vocabulary small, add capabilities one at a time, and cover each with fixtures + tests.

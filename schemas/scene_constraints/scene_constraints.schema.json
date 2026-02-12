@@ -2,133 +2,116 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Scene Constraints Schema (LLM-facing)",
   "type": "object",
-  "required": [
-    "objects"
-  ],
+  "required": ["objects"],
   "properties": {
-    "scene_type": {
-      "type": "string",
-      "const": "constraints"
-    },
+    "scene_type": { "type": "string", "const": "constraints" },
+    "anchor_id": { "type": "string" },
     "objects": {
       "type": "array",
-      "items": {
-        "$ref": "#/definitions/Object"
-      }
+      "items": { "$ref": "#/definitions/Object" }
     }
   },
   "additionalProperties": true,
   "definitions": {
     "Object": {
       "type": "object",
-      "required": [
-        "id",
-        "prototype"
-      ],
+      "required": ["id", "prototype"],
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "prototype": {
-          "type": "string"
-        },
-        "role": {
-          "type": "string"
-        },
-        "params": {
-          "type": "object"
-        }
+        "id": { "type": "string" },
+        "prototype": { "type": "string" },
+        "role": { "type": "string" },
+        "params": { "type": "object" }
       },
       "additionalProperties": true
     },
     "FeatureHandle": {
       "type": "string",
-      "description": "Handle of form ObjectId.feature (feature is runtime-validated against feature catalog).",
-      "pattern": "^[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+(?::[A-Za-z0-9_\\-]+)?$"
+      "description": "Handle of form ObjectId.feature. Feature is runtime-validated against the feature catalog."
     },
     "DirectionToken": {
       "type": "string",
-      "enum": [
-        "N",
-        "NE",
-        "E",
-        "SE",
-        "S",
-        "SW",
-        "W",
-        "NW"
-      ]
+      "enum": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
     },
     "AxisToken": {
       "type": "string",
-      "enum": [
-        "N-S",
-        "E-W",
-        "NE-SW",
-        "NW-SE"
-      ]
+      "enum": ["N-S", "E-W", "NE-SW", "NW-SE"]
+    },
+    "XYPoint": {
+      "type": "object",
+      "required": ["kind", "xy"],
+      "properties": {
+        "kind": { "const": "xy" },
+        "xy": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
     },
     "OffsetFromFeature": {
       "type": "object",
-      "required": [
-        "kind",
-        "feature",
-        "dir",
-        "offset_in"
-      ],
+      "required": ["kind", "feature", "dir", "offset_in"],
       "properties": {
-        "kind": {
-          "const": "offset_from_feature"
-        },
-        "feature": {
-          "$ref": "#/definitions/FeatureHandle"
-        },
-        "dir": {
-          "$ref": "#/definitions/DirectionToken"
-        },
-        "offset_in": {
-          "type": "number"
-        }
+        "kind": { "const": "offset_from_feature" },
+        "feature": { "$ref": "#/definitions/FeatureHandle" },
+        "dir": { "$ref": "#/definitions/DirectionToken" },
+        "offset_in": { "type": "number" }
       },
       "additionalProperties": false
+    },
+    "PointOnEdgeFromVertex": {
+      "type": "object",
+      "required": ["kind", "edge", "vertex", "distance_in"],
+      "properties": {
+        "kind": { "const": "point_on_edge_from_vertex" },
+        "edge": { "$ref": "#/definitions/FeatureHandle" },
+        "vertex": { "$ref": "#/definitions/FeatureHandle" },
+        "distance_in": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "PointLike": {
+      "oneOf": [
+        { "$ref": "#/definitions/XYPoint" },
+        { "$ref": "#/definitions/OffsetFromFeature" },
+        { "$ref": "#/definitions/PointOnEdgeFromVertex" }
+      ]
     },
     "SpanBetweenHits": {
       "type": "object",
-      "required": [
-        "kind",
-        "from",
-        "to"
-      ],
+      "required": ["kind", "from", "to"],
       "properties": {
-        "kind": {
-          "const": "span_between_hits"
-        },
-        "from": {
-          "$ref": "#/definitions/FeatureHandle"
-        },
-        "to": {
-          "$ref": "#/definitions/FeatureHandle"
-        }
+        "kind": { "const": "span_between_hits" },
+        "from": { "$ref": "#/definitions/FeatureHandle" },
+        "to": { "$ref": "#/definitions/FeatureHandle" }
       },
       "additionalProperties": false
     },
+    "RayHit": {
+      "type": "object",
+      "required": ["kind", "until"],
+      "properties": {
+        "kind": { "const": "ray_hit" },
+        "until": { "$ref": "#/definitions/FeatureHandle" }
+      },
+      "additionalProperties": false
+    },
+    "ExtentLike": {
+      "oneOf": [
+        { "$ref": "#/definitions/SpanBetweenHits" },
+        { "$ref": "#/definitions/RayHit" }
+      ]
+    },
     "PlacementConstraintsDimLumber": {
       "type": "object",
-      "required": [
-        "axis",
-        "origin",
-        "extent"
-      ],
+      "required": ["axis", "origin", "extent"],
       "properties": {
-        "axis": {
-          "$ref": "#/definitions/AxisToken"
-        },
-        "origin": {
-          "$ref": "#/definitions/OffsetFromFeature"
-        },
-        "extent": {
-          "$ref": "#/definitions/SpanBetweenHits"
-        }
+        "axis": { "$ref": "#/definitions/AxisToken" },
+        "direction": { "$ref": "#/definitions/DirectionToken" },
+        "origin": { "$ref": "#/definitions/PointLike" },
+        "extent": { "$ref": "#/definitions/ExtentLike" }
       },
       "additionalProperties": false
     }

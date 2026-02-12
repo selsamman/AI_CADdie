@@ -155,3 +155,56 @@ def line_intersection(p1: Point, p2: Point, p3: Point, p4: Point) -> Optional[Po
     px = ((x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4 - y3*x4)) / den
     py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4 - y3*x4)) / den
     return (px,py)
+
+
+def _cross(ax: float, ay: float, bx: float, by: float) -> float:
+    return ax * by - ay * bx
+
+
+def ray_segment_intersection(ray_o: Point, ray_dir_unit: Point, seg_a: Point, seg_b: Point) -> Optional[Tuple[Point, float]]:
+    """Intersect a ray with a segment.
+
+    Ray: P = ray_o + t * ray_dir_unit, t >= 0
+    Segment: Q = seg_a + u * (seg_b - seg_a), 0 <= u <= 1
+
+    Returns (point, t) for the first intersection, or None.
+    """
+    (px, py) = ray_o
+    (rx, ry) = ray_dir_unit
+    (qx, qy) = seg_a
+    (sx, sy) = (seg_b[0] - seg_a[0], seg_b[1] - seg_a[1])
+
+    denom = _cross(rx, ry, sx, sy)
+    if abs(denom) < 1e-9:
+        return None
+
+    qmpx, qmpy = (qx - px, qy - py)
+    t = _cross(qmpx, qmpy, sx, sy) / denom
+    u = _cross(qmpx, qmpy, rx, ry) / denom
+    if t < 0:
+        return None
+    if u < -1e-9 or u > 1 + 1e-9:
+        return None
+    return ((px + t * rx, py + t * ry), t)
+
+
+def ray_polygon_intersection(ray_o: Point, ray_dir_unit: Point, poly: Poly) -> Optional[Point]:
+    """Return the nearest intersection of a ray with the boundary of a polygon."""
+    best_t: Optional[float] = None
+    best_p: Optional[Point] = None
+    n = len(poly)
+    if n < 2:
+        return None
+    for i in range(n):
+        a = poly[i]
+        b = poly[(i + 1) % n]
+        hit = ray_segment_intersection(ray_o, ray_dir_unit, a, b)
+        if hit is None:
+            continue
+        p, t = hit
+        if t <= 1e-9:
+            continue
+        if best_t is None or t < best_t:
+            best_t = t
+            best_p = p
+    return best_p
