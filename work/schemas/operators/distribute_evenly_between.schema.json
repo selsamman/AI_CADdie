@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "op",
+    "template_object_id",
+    "between_object_ids",
+    "count"
+  ],
+  "properties": {
+    "op": {
+      "const": "distribute_evenly_between"
+    },
+    "template_object_id": {
+      "type": "string"
+    },
+    "between_object_ids": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string"
+      }
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "id_prefix": {
+      "type": "string"
+    },
+    "provides": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Scene paths this operator provides (e.g. 'params.placement.start')"
+    }
+  },
+  "additionalProperties": true
+}

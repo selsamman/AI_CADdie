@@ -1,0 +1,75 @@
+{
+  "version": "0.1",
+  "units": "in",
+  "room": {
+    "type": "regular_octagon",
+    "span_flat_to_flat": 167,
+    "pit_depth": 13.75
+  },
+  "objects": [
+    {
+      "id": "room",
+      "type": "room_surface",
+      "params": {}
+    },
+    {
+      "id": "hearth",
+      "type": "hearth",
+      "params": {
+        "origin": [
+          -20,
+          55
+        ],
+        "size": [
+          40,
+          20
+        ],
+        "height": 6
+      }
+    },
+    {
+      "id": "sleeper_proto",
+      "type": "member",
+      "params": {
+        "size": [
+          1.5,
+          2.5
+        ],
+        "height": 1
+      }
+    }
+  ],
+  "ops": [
+    {
+      "id": "main_sleepers",
+      "op": "distribute_linear_array",
+      "inputs": {
+        "room": "room",
+        "prototype": "sleeper_proto"
+      },
+      "params": {
+        "count": 6,
+        "y": 0,
+        "spacing_basis": "clear_gap"
+      },
+      "outputs": {
+        "prefix": "main_sleeper_"
+      }
+    },
+    {
+      "id": "trim_sleepers",
+      "op": "clip_by_halfplane",
+      "inputs": {
+        "targets_prefix": "main_sleeper_",
+        "clipper": "hearth"
+      },
+      "params": {
+        "line": "clipper_south_edge",
+        "keep": "south"
+      },
+      "outputs": {
+        "prefix": "main_sleeper_trim_"
+      }
+    }
+  ]
+}

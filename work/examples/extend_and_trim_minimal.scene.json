@@ -1,0 +1,113 @@
+{
+  "schema_version": "0.2",
+  "anchor_id": "room",
+  "objects": [
+    {
+      "id": "room",
+      "prototype": "regular_octagon_boundary",
+      "params": {
+        "span_flat_to_flat_in": 167,
+        "origin": [
+          0,
+          0
+        ],
+        "north_wall_normal": [
+          0,
+          1
+        ],
+        "wall_height_in": 13.75
+      },
+      "style": {
+        "color": [
+          0.8,
+          0.8,
+          0.8,
+          0.08
+        ]
+      }
+    },
+    {
+      "id": "post",
+      "prototype": "poly_extrude",
+      "params": {
+        "footprint": [
+          [
+            39,
+            -10
+          ],
+          [
+            41,
+            -10
+          ],
+          [
+            41,
+            10
+          ],
+          [
+            39,
+            10
+          ]
+        ],
+        "extrusion": {
+          "z_base": 0,
+          "height": 4
+        }
+      },
+      "style": {
+        "color": [
+          0,
+          0,
+          1,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "sleeper",
+      "prototype": "dim_lumber_member",
+      "params": {
+        "profile": {
+          "system": "S4S",
+          "nominal": "5/4x2x3"
+        },
+        "orientation": {
+          "wide_face": "down"
+        },
+        "placement": {
+          "start": [
+            0,
+            0
+          ],
+          "direction": "east",
+          "length": 80
+        },
+        "extrusion": {
+          "z_base": 0
+        }
+      },
+      "style": {
+        "color": [
+          1,
+          0.6,
+          0.2,
+          0.9
+        ]
+      }
+    }
+  ],
+  "operators": [
+    {
+      "op": "extend_and_trim_to_object",
+      "source_object_id": "sleeper",
+      "target_object_id": "post",
+      "source_edge": [
+        0,
+        1
+      ],
+      "direction": [
+        1,
+        0
+      ]
+    }
+  ]
+}

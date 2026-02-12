@@ -36,7 +36,7 @@ def list_features_for_object(obj: dict) -> List[str]:
         # For now: bbox-derived faces in plan.
         feats += ["face:front","face:back","face:left","face:right","center"]
     elif proto == "dim_lumber_member":
-        feats += ["centerline","start","end"]
+        feats += ["centerline","start","end","footprint"]
     return feats
 
 def build_feature_catalog(resolved_scene: dict) -> dict:
@@ -113,6 +113,54 @@ def resolve_feature_polygon(obj: dict, feature: str) -> Poly:
         return obj["geom"]["footprint"]
     raise ValueError(f"Feature '{feature}' is not a polygon feature for object '{obj['id']}'")
 
+
+def ray_segment_intersection(ray_origin: Point, ray_dir: Point, seg: Segment) -> Optional[Tuple[float, Point]]:
+    """Intersect a ray with a segment.
+
+    Returns (t, point) where point = ray_origin + t*ray_dir, with t >= 0,
+    or None if no intersection.
+    """
+    (x1, y1) = ray_origin
+    (dx, dy) = ray_dir
+    (x3, y3), (x4, y4) = seg
+
+    # Solve ray_origin + t*ray_dir = seg_a + u*(seg_b-seg_a)
+    sx = x4 - x3
+    sy = y4 - y3
+    den = dx * (-sy) - dy * (-sx)
+    if abs(den) < 1e-9:
+        return None
+    # Using Cramer's rule
+    rx = x3 - x1
+    ry = y3 - y1
+    t = (rx * (-sy) - ry * (-sx)) / den
+    u = (dx * ry - dy * rx) / den
+    if t < 0:
+        return None
+    if u < -1e-9 or u > 1 + 1e-9:
+        return None
+    px = x1 + t * dx
+    py = y1 + t * dy
+    return (t, (px, py))
+
+
+def ray_polygon_first_hit(ray_origin: Point, ray_dir: Point, poly: Poly) -> Optional[Point]:
+    """Return the first intersection point between a ray and a polygon boundary."""
+    best_t: Optional[float] = None
+    best_p: Optional[Point] = None
+    n = len(poly)
+    for i in range(n):
+        a = poly[i]
+        b = poly[(i + 1) % n]
+        hit = ray_segment_intersection(ray_origin, ray_dir, (a, b))
+        if hit is None:
+            continue
+        t, p = hit
+        if best_t is None or t < best_t:
+            best_t = t
+            best_p = p
+    return best_p
+
 def unit_from_dir_token(tok: str) -> Point:
     tok = tok.upper()
     mapping = {
@@ -155,3 +203,59 @@ def line_intersection(p1: Point, p2: Point, p3: Point, p4: Point) -> Optional[Po
     px = ((x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4 - y3*x4)) / den
     py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4 - y3*x4)) / den
     return (px,py)
+
+
+def ray_segment_first_hit(ray_origin: Point, ray_dir: Point, seg: Segment) -> Optional[Tuple[float, Point]]:
+    """Return (t, point) for first intersection of a ray with a segment.
+
+    Ray: R(t) = ray_origin + t*ray_dir, t>=0.
+    Segment: between seg[0] and seg[1] inclusive.
+
+    Returns None if no hit. If the ray overlaps the segment (colinear), returns None
+    (we treat as ambiguous in this v0 implementation).
+    """
+    (x1,y1) = ray_origin
+    (dx,dy) = ray_dir
+    (x3,y3), (x4,y4) = seg
+
+    # Solve ray_origin + t*dir = seg_start + u*(seg_end-seg_start)
+    sx, sy = x3, y3
+    ex, ey = x4, y4
+    vx, vy = (ex - sx), (ey - sy)
+
+    den = dx * (-vy) - dy * (-vx)  # determinant of [dir, -v]
+    if abs(den) < 1e-9:
+        return None
+
+    # Cramer's rule
+    rx, ry = (sx - x1), (sy - y1)
+    t = (rx * (-vy) - ry * (-vx)) / den
+    u = (dx * ry - dy * rx) / den
+
+    if t < -1e-9:
+        return None
+    if u < -1e-9 or u > 1.0 + 1e-9:
+        return None
+
+    px = x1 + t * dx
+    py = y1 + t * dy
+    return (max(t, 0.0), (px, py))
+
+
+def ray_polygon_first_hit(ray_origin: Point, ray_dir: Point, poly: Poly) -> Optional[Point]:
+    """Return the closest intersection point of a ray with a polygon boundary."""
+    if not poly or len(poly) < 3:
+        return None
+    best_t: Optional[float] = None
+    best_p: Optional[Point] = None
+    n = len(poly)
+    for i in range(n):
+        a = poly[i]
+        b = poly[(i+1) % n]
+        hit = ray_segment_first_hit(ray_origin, ray_dir, (a, b))
+        if hit is None:
+            continue
+        t, p = hit
+        if best_t is None or t < best_t:
+            best_t, best_p = t, p
+    return best_p

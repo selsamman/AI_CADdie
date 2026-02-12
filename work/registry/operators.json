@@ -1,0 +1,17 @@
+[
+  {
+    "name": "clip_to_object",
+    "schema_path": "schemas/operators/clip_to_object.schema.json",
+    "handler": "engine.operators.clip_to_object.apply"
+  },
+  {
+    "name": "extend_and_trim_to_object",
+    "schema_path": "schemas/operators/extend_and_trim_to_object.schema.json",
+    "handler": "engine.operators.extend_and_trim_to_object.apply"
+  },
+  {
+    "name": "distribute_evenly_between",
+    "schema_path": "schemas/operators/distribute_evenly_between.schema.json",
+    "handler": "engine.operators.distribute_evenly_between.apply"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "op",
+    "target_ids",
+    "clip_object_id"
+  ],
+  "properties": {
+    "op": {
+      "const": "clip_to_object"
+    },
+    "target_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "clip_object_id": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "anchor_id",
+    "objects",
+    "operators"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "anchor_id": {
+      "type": "string"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "operators": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": true
+}
