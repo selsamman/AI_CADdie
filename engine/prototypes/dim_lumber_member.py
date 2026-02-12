@@ -39,6 +39,12 @@ def _resolve_profile(params: Dict[str, Any], registries: Dict[str, Any] | None) 
     if not registries:
         raise ValueError("Registries required to resolve profile.id/nominal")
     table = registries.get("lumber_profiles", {})
+    # Backwards-compatible shorthand: allow id like "2x6" and interpret as "S4S:2x6"
+    if pid not in table and ":" not in pid:
+        alt = f"S4S:{pid}"
+        if alt in table:
+            pid = alt
+
     if pid not in table:
         raise ValueError(f"Unknown lumber profile id: {pid}")
     actual = table[pid].get("actual")

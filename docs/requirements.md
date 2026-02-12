@@ -15,6 +15,14 @@ This is intentionally scoped to browser-based AI assistants that support:
 
 ## 1. Goal
 
+This goal is achieved via a **two-stage** representation:
+
+- An **LLM-facing constraints scene** (`scene_constraints.json`) with a small, token-based vocabulary.
+- A deterministic compiler that expands constraints into the internal numeric `scene.json` used by the geometry engine.
+
+See `docs/design.md` and `docs/constraints_format.md`.
+
+
 Enable a user to:
 
 1. Upload a ZIP bundle containing:

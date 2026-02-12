@@ -14,6 +14,35 @@ All instructions and assets must be contained inside the uploaded ZIP bundle.
 
 ---
 
+## 0.3 Two-stage authoring (LLM-facing constraints → internal scene)
+
+This project now supports a **two-stage** scene description workflow:
+
+1. **LLM-facing constraints scene** (`scene_constraints.json`)
+   - Small, token-based vocabulary designed for LLM reliability.
+   - Uses **feature handles** (e.g. `Octagon.wall:West`, `NewHearth.face:front`) rather than numeric geometry.
+   - Validated against `schemas/scene_constraints/scene_constraints.schema.json`.
+
+2. **Internal scene** (`scene.json`)
+   - Existing rich scene schema used by the deterministic geometry engine.
+   - All placements are numeric by the time this schema is validated.
+
+A deterministic **compiler** expands constraints → internal scene (see `engine/constraints.py`). The runtime then resolves prototypes/operators as usual and emits OpenSCAD.
+
+### Feature catalog
+
+To avoid hard-coding prototype-specific feature enums into JSON Schema, prototypes publish a runtime **feature catalog**:
+
+- For each object in a (resolved) scene, `engine/features.py` can list supported feature handles.
+- The catalog is included in the LLM prompt (later) so the LLM **selects** from valid object ids and feature handles instead of inventing them.
+- The constraints compiler validates every feature handle against this catalog and fails early with clear errors.
+
+### Safe failure mode (important for LLM authoring)
+
+The constraints format is intentionally designed to support a safe “I can’t resolve this” path (e.g. an `unresolved` entry) rather than forcing hallucinated geometry. This is implemented in stages as the constraint vocabulary expands.
+
+---
+
 ## 0. Quick answer: how “trim” is implemented
 
 A trim/clip operator does **true footprint geometry**:

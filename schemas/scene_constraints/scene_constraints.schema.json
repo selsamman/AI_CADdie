@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Scene Constraints Schema (LLM-facing)",
+  "type": "object",
+  "required": [
+    "objects"
+  ],
+  "properties": {
+    "scene_type": {
+      "type": "string",
+      "const": "constraints"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Object"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "Object": {
+      "type": "object",
+      "required": [
+        "id",
+        "prototype"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "prototype": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "FeatureHandle": {
+      "type": "string",
+      "description": "Handle of form ObjectId.feature (feature is runtime-validated against feature catalog).",
+      "pattern": "^[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+(?::[A-Za-z0-9_\\-]+)?$"
+    },
+    "DirectionToken": {
+      "type": "string",
+      "enum": [
+        "N",
+        "NE",
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW"
+      ]
+    },
+    "AxisToken": {
+      "type": "string",
+      "enum": [
+        "N-S",
+        "E-W",
+        "NE-SW",
+        "NW-SE"
+      ]
+    },
+    "OffsetFromFeature": {
+      "type": "object",
+      "required": [
+        "kind",
+        "feature",
+        "dir",
+        "offset_in"
+      ],
+      "properties": {
+        "kind": {
+          "const": "offset_from_feature"
+        },
+        "feature": {
+          "$ref": "#/definitions/FeatureHandle"
+        },
+        "dir": {
+          "$ref": "#/definitions/DirectionToken"
+        },
+        "offset_in": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpanBetweenHits": {
+      "type": "object",
+      "required": [
+        "kind",
+        "from",
+        "to"
+      ],
+      "properties": {
+        "kind": {
+          "const": "span_between_hits"
+        },
+        "from": {
+          "$ref": "#/definitions/FeatureHandle"
+        },
+        "to": {
+          "$ref": "#/definitions/FeatureHandle"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlacementConstraintsDimLumber": {
+      "type": "object",
+      "required": [
+        "axis",
+        "origin",
+        "extent"
+      ],
+      "properties": {
+        "axis": {
+          "$ref": "#/definitions/AxisToken"
+        },
+        "origin": {
+          "$ref": "#/definitions/OffsetFromFeature"
+        },
+        "extent": {
+          "$ref": "#/definitions/SpanBetweenHits"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
