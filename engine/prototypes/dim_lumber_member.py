@@ -68,10 +68,7 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
     start = placement.get("start")
     if not (isinstance(start, list) and len(start) == 2):
         raise ValueError("placement.start must be [x,y]")
-    # NOTE: placement.start is interpreted as the CENTER of the start/end face by default.
-    # If placement.reference_edge is supplied, placement.start is interpreted as lying on that
-    # referenced long edge (in plan), and we offset to obtain the centerline placement.
-    sx_raw, sy_raw = float(start[0]), float(start[1])
+    sx, sy = float(start[0]), float(start[1])
 
     direction = placement.get("direction", "east")
     ux, uy = _unit_from_direction(direction)
@@ -94,43 +91,13 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
 
     z_base = float(params.get("z_base", 0.0))
 
-    # Perpendicular (left) unit vector
-    vx, vy = -uy, ux
-
-    # Resolve reference edge if any.
-    ref = placement.get("reference_edge", "centerline")
-    if ref is None:
-        ref = "centerline"
-    ref = str(ref).strip().lower()
-
-    # These are applied after we know width_on_floor.
-    # Half-width in plan
-    hw = width_on_floor / 2.0
-
-    # Convert provided start (which may be on an edge) to the centerline start.
-    sx, sy = sx_raw, sy_raw
-    if ref not in ("centerline", "center", "mid", "middle"):
-        if ref == "left":
-            # left edge is center + v*hw => center = edge - v*hw
-            sx, sy = sx - vx * hw, sy - vy * hw
-        elif ref == "right":
-            # right edge is center - v*hw => center = edge + v*hw
-            sx, sy = sx + vx * hw, sy + vy * hw
-        elif ref in ("north", "n"):
-            sx, sy = sx, sy - hw
-        elif ref in ("south", "s"):
-            sx, sy = sx, sy + hw
-        elif ref in ("east", "e"):
-            sx, sy = sx - hw, sy
-        elif ref in ("west", "w"):
-            sx, sy = sx + hw, sy
-        else:
-            raise ValueError(
-                "placement.reference_edge must be one of: centerline/left/right/north/south/east/west"
-            )
-
+    # Construct footprint (CCW) as rectangle with one end centered at start.
     # Start end center at (sx,sy); end center at (sx,sy) + length*u
     ex, ey = sx + length*ux, sy + length*uy
+
+    # Perpendicular (left) unit vector
+    vx, vy = -uy, ux
+    hw = width_on_floor / 2.0
 
     p1 = (sx + hw*vx, sy + hw*vy)
     p2 = (sx - hw*vx, sy - hw*vy)

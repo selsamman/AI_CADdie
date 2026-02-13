@@ -155,3 +155,46 @@ def line_intersection(p1: Point, p2: Point, p3: Point, p4: Point) -> Optional[Po
     px = ((x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4 - y3*x4)) / den
     py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4 - y3*x4)) / den
     return (px,py)
+
+# --- Ray intersection helpers (plan view) ---
+def _ray_intersect_segment(origin: Point, dir_u: Point, a: Point, b: Point) -> Optional[Tuple[float, Point]]:
+    """Return (t, point) for intersection of ray origin+t*dir_u (t>=0) with segment a-b, or None."""
+    ox, oy = origin; dx, dy = dir_u; x1,y1=a; x2,y2=b
+    # Solve origin + t*d = a + u*(b-a), with t>=0 and u in [0,1]
+    rx, ry = dx, dy
+    sx, sy = x2-x1, y2-y1
+    den = rx*sy - ry*sx
+    if abs(den) < 1e-9:
+        return None
+    qpx, qpy = x1-ox, y1-oy
+    t = (qpx*sy - qpy*sx) / den
+    u = (qpx*ry - qpy*rx) / den
+    if t < -1e-9 or u < -1e-9 or u > 1+1e-9:
+        return None
+    pt = (ox + t*dx, oy + t*dy)
+    return (t, pt)
+
+def ray_segment_first_hit(origin: Point, dir_u: Point, seg: Tuple[Point,Point]) -> Optional[Point]:
+    hit = _ray_intersect_segment(origin, dir_u, seg[0], seg[1])
+    return None if hit is None else hit[1]
+
+def ray_polygon_first_hit(origin: Point, dir_u: Point, poly: list[Point]) -> Optional[Point]:
+    """Return closest intersection point of ray with polygon boundary, or None."""
+    best_t = None
+    best_pt = None
+    n = len(poly)
+    if n < 2:
+        return None
+    for i in range(n):
+        a = poly[i]
+        b = poly[(i+1)%n]
+        hit = _ray_intersect_segment(origin, dir_u, a, b)
+        if hit is None:
+            continue
+        t, pt = hit
+        if t < 1e-9:
+            continue
+        if best_t is None or t < best_t:
+            best_t = t
+            best_pt = pt
+    return best_pt

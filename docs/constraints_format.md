@@ -65,7 +65,6 @@ Defines an extent between two features along the member axis.
 ```json
 "placement_constraints": {
   "axis": "E-W",
-  "reference_edge": "centerline",
   "origin": { "... offset_from_feature ..." },
   "extent": { "... span_between_hits ..." }
 }
@@ -74,12 +73,8 @@ Defines an extent between two features along the member axis.
 The compiler expands this into internal numeric placement:
 
 - `start`: `[x, y]`
-- `direction`: direction token (e.g. `E`, `NE`, `SW`)
+- `direction`: `[dx, dy]` (unit)
 - `length`: inches
-
-If `reference_edge` is provided, `placement.start` is interpreted as lying on that long edge
-of the member (in plan), and the engine offsets by half the board width to compute the
-centerline placement. Supported values: `centerline`, `left`, `right`, `north`, `south`, `east`, `west`.
 
 ## 5. Example: “Hearth Sleeper”
 

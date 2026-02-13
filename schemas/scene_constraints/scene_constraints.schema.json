@@ -123,19 +123,6 @@
         "axis": {
           "$ref": "#/definitions/AxisToken"
         },
-        "reference_edge": {
-          "type": "string",
-          "description": "Optional: interpret origin point as lying on this edge of the member; engine offsets to centerline.",
-          "enum": [
-            "centerline",
-            "left",
-            "right",
-            "north",
-            "south",
-            "east",
-            "west"
-          ]
-        },
         "origin": {
           "$ref": "#/definitions/OffsetFromFeature"
         },

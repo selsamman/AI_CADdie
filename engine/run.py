@@ -13,15 +13,14 @@ from engine.scad import emit_scad
 
 
 def run_file(scene_path: str | Path, out_path: str | Path) -> Path:
-    """Run the pipeline for a single scene file and write a .scad output.
-
-    This is used by regression runners (scene_tests) and by the CLI.
-    """
+    """Run the pipeline for a single scene file and write a .scad output."""
     scene_path = Path(scene_path)
     out_path = Path(out_path)
 
+    registries = load_registries(Path(__file__).resolve().parents[1])
     scene = json.loads(scene_path.read_text(encoding="utf-8"))
-    # If this is a constraints-authored scene, compile it to the internal scene schema.
+
+    # If constraints-authored, compile to internal schema (registries allow resolving lumber dims during compile).
     if scene.get("scene_type") == "constraints" or any(
         (
             o.get("prototype") == "dim_lumber_member"
@@ -29,11 +28,12 @@ def run_file(scene_path: str | Path, out_path: str | Path) -> Path:
         )
         for o in scene.get("objects", [])
     ):
-        scene = compile_scene_constraints(scene)
-    registries = load_registries(Path(__file__).resolve().parents[1])
+        scene = compile_scene_constraints(scene, registries=registries)
+
     resolved = build_scene(scene, registries)
     out_path.write_text(emit_scad(resolved), encoding="utf-8")
     return out_path
+
 
 def main():
     if len(sys.argv) != 3:
@@ -44,6 +44,7 @@ def main():
 
     run_file(scene_path, out_path)
     print(f"Wrote {out_path}")
+
 
 if __name__ == "__main__":
     main()
