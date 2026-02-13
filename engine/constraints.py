@@ -165,7 +165,10 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
             raise ValueError(f"Unsupported origin kind '{kind}' for dim_lumber_member '{o['id']}'")
 
         # --- axis line (infinite) through origin ---
+        # Keep both axis direction tokens (e.g. E/W, NE/SW) so we can choose the
+        # correct sign later when converting start/end back to start+direction+length.
         pos_tok = axis_to_dir_token(axis, positive=True)
+        neg_tok = axis_to_dir_token(axis, positive=False)
         dx, dy = unit_from_dir_token(pos_tok)
         line_p1 = origin_pt
         line_p2 = (origin_pt[0] + dx, origin_pt[1] + dy)
