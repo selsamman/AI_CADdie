@@ -21,7 +21,6 @@ def run_file(scene_path: str | Path, out_path: str | Path) -> Path:
     out_path = Path(out_path)
 
     scene = json.loads(scene_path.read_text(encoding="utf-8"))
-    registries = load_registries(Path(__file__).resolve().parents[1])
     # If this is a constraints-authored scene, compile it to the internal scene schema.
     if scene.get("scene_type") == "constraints" or any(
         (
@@ -30,7 +29,8 @@ def run_file(scene_path: str | Path, out_path: str | Path) -> Path:
         )
         for o in scene.get("objects", [])
     ):
-        scene = compile_scene_constraints(scene, registries=registries)
+        scene = compile_scene_constraints(scene)
+    registries = load_registries(Path(__file__).resolve().parents[1])
     resolved = build_scene(scene, registries)
     out_path.write_text(emit_scad(resolved), encoding="utf-8")
     return out_path

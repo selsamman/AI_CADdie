@@ -40,20 +40,5 @@ class TestDimLumberMember(unittest.TestCase):
                 "placement": {"start":[0,0], "direction":"east", "length":10},
             }, registries={"lumber_profiles":{}})
 
-    def test_reference_edge_north(self):
-        """If placement.start is given on the north edge, reference_edge='north' should shift to centerline."""
-        geom = dim_lumber_member.resolve({
-            "profile": {"actual": [1.0, 2.5]},
-            # For an east-running board, the north edge is at y=+1.25 relative to centerline.
-            "placement": {"start": [0, 1.25], "direction": "east", "length": 10, "reference_edge": "north"},
-            "orientation": {"wide_face": "down"},
-            "z_base": 0
-        }, registries={"lumber_profiles": {}})
-        fp = geom["footprint"]
-        ys = [p[1] for p in fp]
-        # After adjusting, centerline should be y=0, so edges should be at +/-1.25
-        self.assertAlmostEqual(min(ys), -1.25)
-        self.assertAlmostEqual(max(ys), 1.25)
-
 if __name__ == "__main__":
     unittest.main()

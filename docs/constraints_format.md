@@ -71,17 +71,15 @@ Defines an extent between two features along the member axis.
 }
 ```
 
-Optional `reference_edge` controls how the member is placed *across* its width:
-
-- `centerline` (default): origin/start points refer to the member centerline.
-- `north|south|east|west`: origin/start points refer to the board edge that is most extreme in that global direction.
-- `left|right`: origin/start points refer to the edge on the left/right side relative to the member axis.
-
 The compiler expands this into internal numeric placement:
 
 - `start`: `[x, y]`
-- `direction`: a direction token (`E`, `SW`, etc.)
+- `direction`: direction token (e.g. `E`, `NE`, `SW`)
 - `length`: inches
+
+If `reference_edge` is provided, `placement.start` is interpreted as lying on that long edge
+of the member (in plan), and the engine offsets by half the board width to compute the
+centerline placement. Supported values: `centerline`, `left`, `right`, `north`, `south`, `east`, `west`.
 
 ## 5. Example: “Hearth Sleeper”
 

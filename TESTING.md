@@ -13,26 +13,14 @@ The smoke test runs the example scene through `engine/build.py` and asserts an `
 As development progresses, we keep sample scenes that generate SCAD outputs for manual
 inspection in OpenSCAD.
 
-Generate SCAD for all cases and compare against committed golden `.scad` files:
+Generate SCAD for all cases into `/tmp/aicaddie_scene_tests`:
 
 ```bash
-python3 -m scene_tests.run_all
-```
-
-Generate outputs only (no compare):
-
-```bash
-python3 -m scene_tests.run_all --no-compare
-```
-
-After you have verified the generated `.scad` outputs in OpenSCAD, bless/update goldens:
-
-```bash
-python3 -m scene_tests.run_all --update-golden
+python -m scene_tests.run_all
 ```
 
 Customize output directory and/or file pattern:
 
 ```bash
-python3 -m scene_tests.run_all --outdir ./tmp/scene_tests_out --pattern "*.scene.json"
+python -m scene_tests.run_all --outdir /tmp/aicaddie_scene_tests --pattern "*.scene.json"
 ```

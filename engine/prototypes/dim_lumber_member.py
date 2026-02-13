@@ -68,7 +68,10 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
     start = placement.get("start")
     if not (isinstance(start, list) and len(start) == 2):
         raise ValueError("placement.start must be [x,y]")
-    sx, sy = float(start[0]), float(start[1])
+    # NOTE: placement.start is interpreted as the CENTER of the start/end face by default.
+    # If placement.reference_edge is supplied, placement.start is interpreted as lying on that
+    # referenced long edge (in plan), and we offset to obtain the centerline placement.
+    sx_raw, sy_raw = float(start[0]), float(start[1])
 
     direction = placement.get("direction", "east")
     ux, uy = _unit_from_direction(direction)
@@ -91,55 +94,41 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
 
     z_base = float(params.get("z_base", 0.0))
 
-    # The input start point is normally the CENTER of the start end-face.
-    # However, some specs refer to a specific SIDE/EDGE of the board footprint
-    # (e.g. "the north side of the sleeper starts at ...").
-    #
-    # In that case, placement.reference_edge indicates which edge the provided
-    # placement.start lies on. We then convert it to the centerline start by
-    # shifting by half the footprint width.
-    reference_edge = str(placement.get("reference_edge", "centerline")).strip().lower()
-
     # Perpendicular (left) unit vector
     vx, vy = -uy, ux
+
+    # Resolve reference edge if any.
+    ref = placement.get("reference_edge", "centerline")
+    if ref is None:
+        ref = "centerline"
+    ref = str(ref).strip().lower()
+
+    # These are applied after we know width_on_floor.
+    # Half-width in plan
     hw = width_on_floor / 2.0
 
-    def _adjust_start_for_reference_edge(sx: float, sy: float) -> Tuple[float, float]:
-        if reference_edge in ("center", "centerline", "mid", "middle", ""):
-            return sx, sy
-
-        # Shorthand for edges relative to the direction of travel
-        if reference_edge in ("left", "right"):
-            sgn = 1.0 if reference_edge == "left" else -1.0
-            return sx - sgn * hw * vx, sy - sgn * hw * vy
-
-        # Cardinal edges: interpret as the edge that is most extreme in that
-        # global direction (N/S/E/W) for this member orientation.
-        card = {
-            "north": (0.0, 1.0), "n": (0.0, 1.0),
-            "south": (0.0, -1.0), "s": (0.0, -1.0),
-            "east": (1.0, 0.0), "e": (1.0, 0.0),
-            "west": (-1.0, 0.0), "w": (-1.0, 0.0),
-        }
-        if reference_edge not in card:
+    # Convert provided start (which may be on an edge) to the centerline start.
+    sx, sy = sx_raw, sy_raw
+    if ref not in ("centerline", "center", "mid", "middle"):
+        if ref == "left":
+            # left edge is center + v*hw => center = edge - v*hw
+            sx, sy = sx - vx * hw, sy - vy * hw
+        elif ref == "right":
+            # right edge is center - v*hw => center = edge + v*hw
+            sx, sy = sx + vx * hw, sy + vy * hw
+        elif ref in ("north", "n"):
+            sx, sy = sx, sy - hw
+        elif ref in ("south", "s"):
+            sx, sy = sx, sy + hw
+        elif ref in ("east", "e"):
+            sx, sy = sx - hw, sy
+        elif ref in ("west", "w"):
+            sx, sy = sx + hw, sy
+        else:
             raise ValueError(
-                "placement.reference_edge must be one of: centerline, left, right, north, south, east, west"
+                "placement.reference_edge must be one of: centerline/left/right/north/south/east/west"
             )
 
-        gx, gy = card[reference_edge]
-        dot = vx * gx + vy * gy
-        # If dot > 0, the + (left) edge lies more in the desired global direction.
-        # If dot < 0, the - (right) edge lies more in the desired global direction.
-        sgn = 1.0 if dot >= 0 else -1.0
-        return sx - sgn * hw * vx, sy - sgn * hw * vy
-
-    sx, sy = _adjust_start_for_reference_edge(sx, sy)
-
-    # Construct footprint (CCW) as rectangle with one end centered at start.
-    # Start end center at (sx,sy); end center at (sx,sy) + length*u
-    ex, ey = sx + length*ux, sy + length*uy
-
-    # Construct footprint (CCW) as rectangle with one end centered at start.
     # Start end center at (sx,sy); end center at (sx,sy) + length*u
     ex, ey = sx + length*ux, sy + length*uy
 

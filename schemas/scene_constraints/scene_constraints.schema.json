@@ -120,13 +120,21 @@
         "extent"
       ],
       "properties": {
-        "reference_edge": {
-          "type": "string",
-          "description": "How to interpret origin/start points: centerline (default) or a specific board edge.",
-          "enum": ["centerline", "left", "right", "north", "south", "east", "west"]
-        },
         "axis": {
           "$ref": "#/definitions/AxisToken"
+        },
+        "reference_edge": {
+          "type": "string",
+          "description": "Optional: interpret origin point as lying on this edge of the member; engine offsets to centerline.",
+          "enum": [
+            "centerline",
+            "left",
+            "right",
+            "north",
+            "south",
+            "east",
+            "west"
+          ]
         },
         "origin": {
           "$ref": "#/definitions/OffsetFromFeature"
