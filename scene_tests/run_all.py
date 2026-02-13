@@ -3,18 +3,30 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-from pathlib import Path
+import shutil
 import sys
+from pathlib import Path
 
 
-def _default_outdir() -> str:
-    # Use /tmp on Unix-y systems, fall back to cwd.
-    return "/tmp/aicaddie_scene_tests" if os.path.isdir("/tmp") else os.path.abspath("./_scene_test_outputs")
+def _repo_root() -> Path:
+    # scene_tests/... -> repo root
+    return Path(__file__).resolve().parent.parent
+
+
+def _default_outdir() -> Path:
+    return _repo_root() / "tmp" / "scene_tests_out"
+
+
+def _read_text(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Generate SCAD outputs for all scene regression cases (human-verified in OpenSCAD)."
+        description=(
+            "Generate SCAD outputs for scene regression cases and optionally compare against golden SCAD files."
+        )
     )
     parser.add_argument(
         "--cases",
@@ -22,31 +34,48 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory containing *.scene.json cases (default: scene_tests/cases)",
     )
     parser.add_argument(
+        "--golden",
+        default=str(Path(__file__).parent / "golden"),
+        help="Directory containing golden .scad files (default: scene_tests/golden)",
+    )
+    parser.add_argument(
         "--outdir",
-        default=_default_outdir(),
-        help="Directory to write generated .scad files (default: /tmp/aicaddie_scene_tests)",
+        default=str(_default_outdir()),
+        help="Directory to write generated .scad files (default: ./tmp/scene_tests_out)",
     )
     parser.add_argument(
         "--pattern",
         default="*.scene.json",
         help="Glob pattern for case files (default: *.scene.json)",
     )
+    parser.add_argument(
+        "--no-compare",
+        action="store_true",
+        help="Only generate outputs; do not compare against golden files.",
+    )
+    parser.add_argument(
+        "--update-golden",
+        action="store_true",
+        help="Update golden files from generated outputs (overwrites scene_tests/golden/*.scad).",
+    )
     args = parser.parse_args(argv)
 
-    cases_dir = os.path.abspath(args.cases)
-    outdir = os.path.abspath(args.outdir)
-    os.makedirs(outdir, exist_ok=True)
+    cases_dir = Path(os.path.abspath(args.cases))
+    golden_dir = Path(os.path.abspath(args.golden))
+    outdir = Path(os.path.abspath(args.outdir))
+    outdir.mkdir(parents=True, exist_ok=True)
+    golden_dir.mkdir(parents=True, exist_ok=True)
 
-    pattern = os.path.join(cases_dir, args.pattern)
+    pattern = str(cases_dir / args.pattern)
     case_files = sorted(glob.glob(pattern))
     if not case_files:
         print(f"No scene cases found at: {pattern}")
         return 2
 
-    # Import here to keep CLI snappy.
     from engine.run import run_file
 
-    failures: list[tuple[str, str]] = []
+    failures: list[str] = []
+    missing_golden: list[str] = []
 
     for path in case_files:
         base = os.path.basename(path)
@@ -55,18 +84,54 @@ def main(argv: list[str] | None = None) -> int:
             if name.endswith(suf):
                 name = name[: -len(suf)]
                 break
-        out_path = os.path.join(outdir, f"{name}.scad")
+
+        out_path = outdir / f"{name}.scad"
+        golden_path = golden_dir / f"{name}.scad"
+
         try:
-            run_file(path, out_path)
-            print(f"OK   {base} -> {out_path}")
+            run_file(path, str(out_path))
         except Exception as e:
-            failures.append((base, str(e)))
-            print(f"FAIL {base}: {e}")
+            failures.append(f"[FAIL] {base}: {e}")
+            continue
+
+        if args.update_golden:
+            shutil.copyfile(out_path, golden_path)
+            print(f"[GOLDEN] {base} -> {golden_path}")
+            continue
+
+        if args.no_compare:
+            print(f"[OK] {base} -> {out_path}")
+            continue
+
+        if not golden_path.exists():
+            missing_golden.append(base)
+            print(f"[MISSING GOLDEN] {base} (expected {golden_path})")
+            continue
+
+        got = _read_text(str(out_path))
+        exp = _read_text(str(golden_path))
+        if got != exp:
+            failures.append(f"[DIFF] {base}: output does not match golden ({golden_path})")
+            print(f"[FAIL] {base}")
+        else:
+            print(f"[PASS] {base}")
+
+    if args.update_golden:
+        return 0
+
+    if missing_golden:
+        print(
+            "\nMissing golden files for:\n"
+            + "\n".join(f"- {b}" for b in missing_golden)
+            + "\n\nRun with --update-golden after verifying outputs in OpenSCAD."
+        )
+        # Treat missing goldens as failure unless user opted out of comparisons.
+        return 1 if not args.no_compare else (1 if failures else 0)
 
     if failures:
         print("\nFailures:")
-        for base, msg in failures:
-            print(f"- {base}: {msg}")
+        for f in failures:
+            print(f"- {f}")
         return 1
 
     return 0
