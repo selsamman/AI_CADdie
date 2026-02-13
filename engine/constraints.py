@@ -187,7 +187,7 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
             end = hit_to
 
         elif ek == "ray_hit":
-            dir_tok = str(extent.get("dir", pos_tok))
+            dir_tok = str(extent.get("dir", pc.get("direction", pos_tok)))
             udir = unit_from_dir_token(dir_tok)
             until_h = extent["until"]
             require_handle(until_h)
