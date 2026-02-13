@@ -1,8 +1,0 @@
-*.zip
-.idea
-
-__pycache__/
-*.pyc
-
-tmp/
-scene_tests/scad/
