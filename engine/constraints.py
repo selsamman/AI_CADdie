@@ -213,15 +213,66 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
         else:
             raise ValueError(f"Unsupported extent kind '{ek}' for dim_lumber_member '{o['id']}'")
 
+        # Apply side-based placement (reference_edge) by shifting the member centerline.
+        if ref_edge is not None:
+            ref = str(ref_edge).strip().lower()
+            # resolve member "width" (the dimension perpendicular to its axis in plan)
+            width = None
+            prof = params.get("profile", {}) if isinstance(params.get("profile"), dict) else {}
+            if isinstance(prof.get("actual"), list) and len(prof["actual"]) == 2:
+                try:
+                    width = float(prof["actual"][1])
+                except Exception:
+                    width = None
+            if width is None and isinstance(prof.get("id"), str) and registries is not None:
+                pid = prof["id"]
+                # accept shorthand ids like "2x6" by checking common prefix
+                if pid in registries.get("lumber_profiles", {}):
+                    width = float(registries["lumber_profiles"][pid]["actual"][1])
+                else:
+                    key = f"S4S:{pid}"
+                    if key in registries.get("lumber_profiles", {}):
+                        width = float(registries["lumber_profiles"][key]["actual"][1])
+            if width is not None and width > 0:
+                half = width / 2.0
+                # direction used for left/right is based on placement_constraints.direction if present
+                dir_for_lr = str(pc.get("direction", pos_tok)).strip().upper()
+                dux, duy = unit_from_dir_token(dir_for_lr)
+                # left is +90deg rotation of axis direction
+                lpx, lpy = (-duy, dux)
+                rpx, rpy = (duy, -dux)
+                ox = oy = 0.0
+                if ref == "north":
+                    ox, oy = (0.0, -half)
+                elif ref == "south":
+                    ox, oy = (0.0, half)
+                elif ref == "east":
+                    ox, oy = (-half, 0.0)
+                elif ref == "west":
+                    ox, oy = (half, 0.0)
+                elif ref == "left":
+                    # left edge fixed -> centerline shifts right by half width
+                    ox, oy = (rpx * half, rpy * half)
+                elif ref == "right":
+                    # right edge fixed -> centerline shifts left by half width
+                    ox, oy = (lpx * half, lpy * half)
+                if ox != 0.0 or oy != 0.0:
+                    start = (start[0] + ox, start[1] + oy)
+                    end = (end[0] + ox, end[1] + oy)
         # convert start/end to start+length+direction as expected by prototype
         # Determine direction token along axis from start->end
         vx, vy = (end[0] - start[0], end[1] - start[1])
         length = (vx * vx + vy * vy) ** 0.5
         if length <= 1e-6:
             raise ValueError(f"Computed zero length for '{o['id']}' from constraints")
-        # choose direction token closest to vx,vy among the 8 cardinal tokens
-        # use axis positive token as default
-        direction = pos_tok
+        # Prefer explicit placement_constraints.direction if provided; otherwise choose axis sign based on start->end.
+        pc_dir = pc.get("direction")
+        if isinstance(pc_dir, str) and pc_dir.strip():
+            direction = pc_dir.strip().upper()
+        else:
+            ax_u = unit_from_dir_token(pos_tok)
+            dot = vx * ax_u[0] + vy * ax_u[1]
+            direction = pos_tok if dot >= 0 else neg_tok
 
         params.setdefault("placement", {})
         params["placement"]["start"] = [float(start[0]), float(start[1])]
