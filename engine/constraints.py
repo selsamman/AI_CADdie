@@ -236,6 +236,19 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
     support = _resolve_support_objects(scene)
     obj_index = _index_objects(support)
 
+    # Default Z placement: for constraint-authored scenes, treat all solid z-bases as
+    # relative to the anchor boundary's top surface (wall_height). This makes generated
+    # SCAD easier to visually verify in tests (members sit on top of the room boundary).
+    anchor_top_z = 0.0
+    try:
+        anchor_id = scene.get('anchor_id') or scene_constraints.get('anchor_id')
+        if anchor_id and anchor_id in obj_index:
+            g = (obj_index[anchor_id] or {}).get('geom')
+            if isinstance(g, dict) and g.get('kind') == 'boundary':
+                anchor_top_z = float(g.get('wall_height', 0.0))
+    except Exception:
+        anchor_top_z = 0.0
+
     # Build feature catalog from currently-known geometry.
     catalog = build_feature_catalog(support)
     feat_map = {o['id']: o.get('features', []) for o in catalog.get('objects', [])}
@@ -259,11 +272,26 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
     concrete_objects = []
     for o in scene.get("objects", []):
         if o.get("prototype") != "dim_lumber_member":
-            concrete_objects.append(o)
+            # Lift solids onto the anchor's top surface for visual verification.
+            if o.get("prototype") == "poly_extrude" and anchor_top_z != 0.0:
+                oo = copy.deepcopy(o)
+                p = oo.get("params", {}) or {}
+                ex = p.get("extrusion")
+                if isinstance(ex, dict):
+                    zb = float(ex.get("z_base", 0.0))
+                    ex["z_base"] = zb + anchor_top_z
+                    p["extrusion"] = ex
+                    oo["params"] = p
+                concrete_objects.append(oo)
+            else:
+                concrete_objects.append(o)
             continue
 
         params = copy.deepcopy(o.get("params", {}))
         pc = params.pop("placement_constraints", None)
+        if anchor_top_z != 0.0:
+            # If caller did not specify z_base, place member on top of anchor boundary.
+            params.setdefault("z_base", anchor_top_z)
         if not isinstance(pc, dict):
             concrete_objects.append(o)
             continue
