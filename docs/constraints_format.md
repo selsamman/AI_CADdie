@@ -39,6 +39,8 @@ This is an incremental implementation. The following kinds are supported today:
 
 Positions an origin relative to a feature.
 
+- **Semantic rule:** `offset_in` is the distance from the referenced feature to the **nearest face** of the placed member (measured perpendicular to the feature, in the `dir` direction), **not** to the member centerline.
+
 ```json
 {
   "kind": "offset_from_feature",

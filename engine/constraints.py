@@ -22,6 +22,47 @@ import copy
 from engine.prototypes import poly_extrude, regular_octagon_boundary, dim_lumber_member
 from engine.geom import clip_halfplane, ray_segment_intersection
 
+def _width_on_floor_for_member(params: Dict[str, Any], registries: Optional[dict]) -> float:
+    """Return member footprint width (inches) in the floor plane for dim_lumber_member.
+
+    Matches dim_lumber_member semantics:
+    - profile.actual -> [thickness,width]
+    - profile.id shorthand "2x6" -> "S4S:2x6" lookup
+    - orientation.wide_face default "down" -> width_on_floor = width
+      wide_face "side"/"edge" -> width_on_floor = thickness
+    """
+    profile = params.get("profile", {}) or {}
+    orient = params.get("orientation", {}) or {}
+
+    # Default to a reasonable value if we cannot resolve profiles (keeps compiler robust)
+    thickness, width = 1.0, 1.0
+
+    actual = profile.get("actual")
+    if isinstance(actual, list) and len(actual) == 2:
+        thickness, width = float(actual[0]), float(actual[1])
+    else:
+        pid = profile.get("id")
+        if not pid:
+            system = profile.get("system", "S4S")
+            nominal = profile.get("nominal")
+            if nominal:
+                pid = f"{system}:{nominal}"
+        if isinstance(pid, str) and registries:
+            table = (registries or {}).get("lumber_profiles", {}) or {}
+            if pid not in table and ":" not in pid:
+                alt = f"S4S:{pid}"
+                if alt in table:
+                    pid = alt
+            if pid in table and isinstance(table[pid], dict) and "actual" in table[pid]:
+                a = table[pid]["actual"]
+                if isinstance(a, list) and len(a) == 2:
+                    thickness, width = float(a[0]), float(a[1])
+
+    wide_face = str(orient.get("wide_face", "down")).strip().lower()
+    if wide_face in ("side", "edge"):
+        return thickness
+    return width
+
 from engine.features import (
     build_feature_catalog,
     resolve_feature_segment,
@@ -309,15 +350,41 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
             oid, feat = _parse_handle(feature_h)
             seg = resolve_feature_segment(obj_index[oid], feat)
             a, b = seg
-            # feature normal direction is provided as a token (N/S/E/W/NE/etc)
-            dir_tok = str(origin.get("dir", "S"))
-            ux, uy = unit_from_dir_token(dir_tok)
-            off = float(origin.get("offset_in", 0.0))
-            # choose midpoint of the segment and offset from it
-            mx, my = (a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0
-            origin_pt = (mx + ux * off, my + uy * off)
 
-        elif kind == "point_on_edge_from_vertex":
+            # Direction is specified as a token (N/S/E/W/NE/etc) and should be perpendicular
+            # to the referenced feature in well-formed scenes.
+            dir_tok = str(origin.get("dir", "S"))
+            dx, dy = unit_from_dir_token(dir_tok)
+
+            # IMPORTANT SEMANTICS:
+            # offset_in is measured from the referenced feature to the NEAREST FACE of the member
+            # (not the member centerline). We therefore shift the member's centerline by:
+            #   offset_in + (half_width projected along the offset direction)
+            off = float(origin.get("offset_in", 0.0))
+
+            # choose midpoint of the segment and offset from it (distance is constant along parallel lines)
+            mx, my = (a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0
+
+            # Compute member half-width in the floor plane
+            width_on_floor = _width_on_floor_for_member(params, registries)
+            half_w = 0.5 * float(width_on_floor)
+
+            # Member axis direction (for determining which face is "closest" along dir_tok)
+            dir_for_axis = axis_to_dir_token(axis, positive=True)
+            ux, uy = unit_from_dir_token(dir_for_axis)
+            # Perpendicular (left) unit vector for the member footprint
+            px, py = (-uy, ux)
+
+            # How much moving along (dx,dy) changes the member's perpendicular coordinate
+            dp = dx * px + dy * py
+            if abs(dp) < 1e-9:
+                # Degenerate: dir not meaningfully related to member width; fall back to simple half-width
+                face_shift = half_w
+            else:
+                face_shift = half_w / abs(dp)
+
+            origin_pt = (mx + dx * (off + face_shift), my + dy * (off + face_shift))
+elif kind == "point_on_edge_from_vertex":
             edge_h = origin["edge"]
             vertex_h = origin["vertex"]
             dist = float(origin["distance_in"])
