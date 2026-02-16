@@ -172,8 +172,10 @@ def _shift_origin_for_reference_edge(
         # origin is on right edge -> move left to centerline
         return (origin_pt[0] + lx * hw, origin_pt[1] + ly * hw)
 
-    # Cardinal edges: interpret as global directions (N/S/E/W).
-    # origin is on that named edge -> move opposite that direction to centerline.
+    # Cardinal edges: interpret as STORE-ORIENTED directions in the member's local frame.
+    # Local +X is along the member axis unit; local +Y ("North") is left of the axis.
+    # An origin on that named edge is shifted toward the centerline by half-width in the
+    # opposite local direction.
     dir_map = {
         "n": "N", "north": "N",
         "s": "S", "south": "S",
@@ -185,7 +187,36 @@ def _shift_origin_for_reference_edge(
         "sw": "SW", "southwest": "SW",
     }
     tok = dir_map.get(ref, ref.upper())
-    ux, uy = unit_from_dir_token(tok)
+
+    # Local basis
+    fx, fy = (dx, dy)      # forward (+E in store frame)
+    lnx, lny = (lx, ly)    # left (+N in store frame)
+
+    def _local_unit(t: str) -> tuple[float, float]:
+        t = t.upper()
+        if t == "E":
+            return (fx, fy)
+        if t == "W":
+            return (-fx, -fy)
+        if t == "N":
+            return (lnx, lny)
+        if t == "S":
+            return (-lnx, -lny)
+        if t == "NE":
+            vx, vy = (fx + lnx, fy + lny)
+        elif t == "NW":
+            vx, vy = (-fx + lnx, -fy + lny)
+        elif t == "SE":
+            vx, vy = (fx - lnx, fy - lny)
+        elif t == "SW":
+            vx, vy = (-fx - lnx, -fy - lny)
+        else:
+            # Fallback: treat as global token if we don't recognize it.
+            return unit_from_dir_token(t)
+        n = (vx * vx + vy * vy) ** 0.5
+        return (vx / n, vy / n)
+
+    ux, uy = _local_unit(tok)
     return (origin_pt[0] - ux * hw, origin_pt[1] - uy * hw)
 
 
@@ -305,8 +336,9 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
         kind = origin.get("kind")
         if kind == "offset_from_feature":
             # Semantic rule (correct): offset_in is measured from the referenced feature
-            # to the NEAREST FACE of the placed member (not the centerline), measured
-            # perpendicular to the feature and in the specified dir.
+            # to the member FACE (not the centerline), measured in the specified dir.
+            # If reference_edge is omitted: the face is chosen as the nearest face in that dir.
+            # If reference_edge is provided: the face identity is fixed (store-oriented).
             feature_h = origin["feature"]
             require_handle(feature_h)
             oid, feat = _parse_handle(feature_h)
@@ -328,26 +360,32 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
             nx, ny = (-ay, ax)
             d_dot_n = (uDx * nx + uDy * ny)
 
-            # Place the NEAREST FACE at off_face from the feature along dir.
+            # Point on the member FACE that should be off_face from the feature along dir.
             face_pt = (mx + uDx * off_face, my + uDy * off_face)
 
-            # Translate from face point to centerline point along dir.
-            # If dir isn't perpendicular to the member axis (i.e., no component along the
-            # member normal), the "nearest face" is not well-defined.
             if registries is None:
-                # Without registries we cannot know actual member width; treat off_face
-                # as a centerline offset (legacy-ish fallback).
+                # Without registries we cannot know actual member width; treat face_pt
+                # as a centerline-ish placement reference.
                 origin_pt = face_pt
             else:
-                if abs(d_dot_n) < 1e-9:
-                    raise ValueError(
-                        f"offset_from_feature dir '{dir_tok}' must have a non-zero component perpendicular "
-                        f"to axis '{axis}' for dim_lumber_member '{o['id']}'"
-                    )
                 hw = _member_half_width_on_floor(params, registries)
-                # Project half-width onto the measurement direction.
-                shift = hw / abs(d_dot_n)
-                origin_pt = (face_pt[0] + uDx * shift, face_pt[1] + uDy * shift)
+                if ref_edge:
+                    # reference_edge means face identity is fixed (store-oriented); we will later
+                    # shift this edge point to the centerline using _shift_origin_for_reference_edge.
+                    origin_pt = face_pt
+                else:
+                    # No explicit face given: interpret "nearest face in dir".
+                    # The nearest face must be one of the two side faces offset ±hw along the
+                    # member normal. For dir to select a side face it must have a non-zero component
+                    # along that normal.
+                    if abs(d_dot_n) < 1e-9:
+                        raise ValueError(
+                            f"offset_from_feature dir '{dir_tok}' must have a non-zero component perpendicular "
+                            f"to axis '{axis}' for dim_lumber_member '{o['id']}'"
+                        )
+                    # If dir points toward +normal, the nearest face is the -normal face, and vice versa.
+                    s = 1.0 if d_dot_n > 0.0 else -1.0
+                    origin_pt = (face_pt[0] + s * hw * nx, face_pt[1] + s * hw * ny)
 
         elif kind == "point_on_edge_from_vertex":
             edge_h = origin["edge"]
