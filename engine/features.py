@@ -97,10 +97,10 @@ def resolve_feature_segment(obj: dict, feature: str) -> Segment:
         poly = geom["footprint"]
         mnx,mny,mxx,mxy = _bbox(poly)
         f = feature.split(":",1)[1]
-        if f == "front":   # max y
-            return ((mnx,mxy),(mxx,mxy))
-        if f == "back":    # min y
+        if f == "front":   # min y (front is toward room)
             return ((mnx,mny),(mxx,mny))
+        if f == "back":    # max y (back is toward chimney/wall)
+            return ((mnx,mxy),(mxx,mxy))
         if f == "left":    # min x
             return ((mnx,mny),(mnx,mxy))
         if f == "right":   # max x
