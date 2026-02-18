@@ -86,3 +86,145 @@ Acceptance criteria for the fix:
 - Upload latest repo as `ai_caddie.zip` (zip working directory; exclude `.git`, `tmp`, `__pycache__`, `*.pyc`).
 - Provide screenshot of `right_wing_sleeper_constraints.scad` with octagon hidden if still unclear.
 
+
+
+
+# === ADDENDUM: Authoritative semantic clarifications (2026‑02‑16) ===
+
+This section overrides and clarifies prior instructions where there is any conflict.
+
+## 1. offset_from_feature semantics (FINAL)
+
+When:
+
+    placement_constraints.origin.kind = "offset_from_feature"
+
+The meaning is:
+
+    The distance between the referenced feature and the specified member face
+    equals offset_in, measured perpendicular to the feature and in direction dir.
+
+NOT centerline.
+
+NEVER centerline.
+
+The engine MUST compute placement.start such that the specified face satisfies the rule.
+
+
+
+## 2. reference_edge semantics (CRITICAL)
+
+If:
+
+    reference_edge is specified
+
+THEN:
+
+    The identity of that edge is intrinsic to the member and MUST be honored.
+
+It refers to the store‑defined orientation of dimensional lumber.
+
+Rotation in the scene DOES NOT change edge identity.
+
+The engine MUST use that exact face.
+
+NEVER substitute nearest face.
+
+
+
+## 3. Default face selection when reference_edge NOT provided
+
+If reference_edge is absent:
+
+The engine MUST use:
+
+    The member face nearest to the referenced feature in direction dir.
+
+This must be computed using correct sign logic relative to member normal.
+
+
+
+## 4. Parallel‑axis requirement (NEW HARD RULE)
+
+offset_from_feature is ONLY VALID if:
+
+    member axis is parallel to the referenced feature axis.
+
+If not parallel:
+
+The engine MUST:
+
+    raise a deterministic error.
+
+It MUST NOT silently approximate.
+
+It MUST NOT ignore the constraint.
+
+
+
+## 5. Error reporting requirement (LLM feedback)
+
+Errors MUST include:
+
+    object id
+    origin feature
+    member axis
+    feature axis
+    reason
+
+Example:
+
+    ERROR: HearthSleeper axis NE‑SW is not parallel to NewHearth.face:front axis E‑W.
+    offset_from_feature requires parallel axes.
+
+This is required so the LLM can correct itself.
+
+
+
+## 6. Negative test support requirement
+
+Scene tests may intentionally produce errors.
+
+Test harness must support:
+
+    expected failure cases
+
+These are considered PASS when correct error occurs.
+
+
+
+## 7. Golden SCAD comparison requirement
+
+Golden comparison applies ONLY to successful scenes.
+
+Error scenes must not attempt SCAD comparison.
+
+
+
+## 8. Intermediate artifact retention
+
+Compiler must retain intermediate compiled scene representations when possible.
+
+This is required for regression analysis.
+
+
+
+## 9. Absolute priority order
+
+If conflict exists, priority order is:
+
+1. This addendum
+2. Seed context
+3. Inline comments
+4. Legacy behavior
+
+
+
+## 10. Prime directive
+
+Correct geometry semantics ALWAYS take precedence over legacy compatibility.
+
+NEVER preserve incorrect behavior to avoid breaking goldens.
+
+Goldens must reflect correct geometry.
+

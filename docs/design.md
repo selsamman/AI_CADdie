@@ -1,4 +1,5 @@
 # DescriptiveCAD – Experimental In-Chat CAD Stack Specification (v0.2 draft)
+Design 
 
 This document extends v0.1 with a clearer taxonomy of the building blocks and how they relate.
 It does not fully define every schema field; it defines the *shape of the system* and gives

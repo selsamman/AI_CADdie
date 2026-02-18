@@ -2,6 +2,9 @@
 
 # Assumptions
 
+The details at the start including assumptions are for historical purposes.  
+The spec should stand on it's own starting a Geometric Objects
+
 ## Enumeration and specification of Geometric Objects
 
 Each object is enumerated and named. Sub-features of objects (edges/faces/sections/surfaces) are also named when being referred to. For each object, the **minimum information needed to determine its 3D placement and orientation** is specified; remaining vertices are derived from the implied shape (e.g., joist as a prism from a centerline, width, depth, and elevation). Some points/edges are defined **relative to named features** of previously-defined objects. The construction order is explicit so all references are realizable at the time they are used.  The drawing order of point lists are in the order they are specified.
@@ -29,19 +32,6 @@ The project coordinate system is defined in this spec as:
 *   
 * 
 
-## SCAD Generation A SCAD file is to be produced with:
-
-* **Constants**  
-  * Numeric parameters from the spec  
-  * Boolean toggles to include/exclude each object or group  
-* **Geometry functions (data only)**  
-  * One function per object that returns the object’s **authoritative geometry as data (**Preferably: a 2D footprint \+ {z\_base, height} **or** explicit 3D points)  
-  * Geometry functions may reference other geometry functions when points are defined relative to other objects  
-  * No function may depend (directly or indirectly) on itself (no cycles)  
-* **Rendering modules (drawing only)**  
-  * One module per object that draws the object by calling its geometry function(s)  
-  * Modules do not compute dependent geometry; they only render  
-* Functions and rendering modules should use the names in this spec
 
 # Geometric Objects
 

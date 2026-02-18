@@ -1,7 +1,6 @@
-# DescriptiveCAD – Experimental In‑Chat CAD Stack Specification (v0.1)
-
+# Overview
 This document specifies the current experimental workflow, constraints, and components for the
-DescriptiveCAD project as discussed so far.
+AICaddie project.
 
 This is intentionally scoped to browser-based AI assistants that support:
 - file upload
@@ -25,14 +24,16 @@ See `docs/design.md` and `docs/constraints_format.md`.
 
 Enable a user to:
 
-1. Upload a ZIP bundle containing:
+1. Upload a ZIP bundle containing (this repo):
    - a small deterministic geometry engine
    - operator definitions
    - schemas and instructions
 2. Upload a human-readable design specification
 3. In a single AI chat session:
    - resolve ambiguities
-   - generate a canonical machine-readable scene description
+   - generate a canonical machine-readable scene description as defined in 
+     docs/constraints_format.md
+   - Convert that to a scene
    - execute a geometry pipeline
    - receive a generated OpenSCAD file
 
@@ -253,15 +254,6 @@ The first required test is purely mechanical:
 
 No spec parsing is involved.
 
----
-
-## 15. Future scope (explicitly out of scope for v0.1)
-
-- general polygon boolean operations
-- offsets / buffering
-- arbitrary sweep / first-contact against concave geometry
-- parametric assemblies and hierarchical groups
-- 3D solids beyond linear extrusion
 
 ---
 
