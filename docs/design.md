@@ -15,6 +15,25 @@ All instructions and assets must be contained inside the uploaded ZIP bundle.
 
 ---
 
+## 0. Pipeline overview
+
+The full pipeline from human spec to OpenSCAD output is three stages:
+
+1. **LLM authors `scene_constraints.json`** — reads the human design spec and produces a constraints scene using the token-based vocabulary defined in `docs/constraints_format.md`. No numeric geometry is computed by the LLM.
+
+2. **Compiler produces `scene.json`** (`engine/constraints.py`) — deterministically expands feature handles and constraint kinds into numeric placements. The LLM never touches this file directly.
+
+3. **Geometry engine produces `.scad`** (`engine/run.py`) — reads `scene.json`, executes the operator pipeline, emits OpenSCAD output.
+
+All design artifacts are chained from this document. Key references:
+- LLM authoring format and feature catalog: `docs/constraints_format.md`
+- Governing principles for positioning and dependency order: `docs/requirements.md` section 5
+- Constraint compiler: `engine/constraints.py`
+- Feature catalog and runtime validation: `engine/features.py`
+- Geometry engine entry point: `engine/run.py`
+
+---
+
 ## 0.3 Two-stage authoring (LLM-facing constraints → internal scene)
 
 This project now supports a **two-stage** scene description workflow:
@@ -35,7 +54,7 @@ A deterministic **compiler** expands constraints → internal scene (see `engine
 To avoid hard-coding prototype-specific feature enums into JSON Schema, prototypes publish a runtime **feature catalog**:
 
 - For each object in a (resolved) scene, `engine/features.py` can list supported feature handles.
-- The catalog is included in the LLM prompt (later) so the LLM **selects** from valid object ids and feature handles instead of inventing them.
+- The catalog is documented statically in `docs/constraints_format.md` for LLM authoring, and validated at runtime against `engine/features.py`.
 - The constraints compiler validates every feature handle against this catalog and fails early with clear errors.
 
 ### Safe failure mode (important for LLM authoring)
@@ -65,7 +84,7 @@ A Scene is:
 - plus an ordered list of operator invocations
 - plus an anchor reference used for default feature lookup
 
-The scene is authored by the assistant (from the user spec) and is consumed by Python.
+The internal scene (`scene.json`) is produced by the compiler from the LLM-authored `scene_constraints.json`. See `docs/constraints_format.md` for the LLM-facing authoring format.
 
 ### 1.2 Prototype
 A Prototype is a registered “object type” definition that includes:
@@ -320,16 +339,19 @@ Illustrative registry entry:
 
 ## 9. LLM responsibilities and constraints (v0.x)
 
+The assistant's authoring output is `scene_constraints.json` — the LLM-facing constraints format described in `docs/constraints_format.md`. The assistant never authors `scene.json` directly. The compiler (`engine/constraints.py`) performs that expansion deterministically.
+
 The assistant must:
-- choose from registered prototypes/operators only
-- fill required schema fields only
-- ask for clarification rather than infer missing numeric parameters
-- produce `scene.json` that validates against schemas
+- choose from registered prototypes and constraint kinds only (see `docs/constraints_format.md`)
+- fill required fields only — ask for clarification rather than infer missing parameters
+- reference only features of previously defined objects (see `docs/requirements.md` section 5)
+- produce `scene_constraints.json` that validates against `schemas/scene_constraints/scene_constraints.schema.json`
+- run the compiler to validate constraints before returning output; correct any errors at the constraints level
 
 The assistant must not:
-- invent new operators or prototype names
-- invent geometry parameters not present in the user’s spec
-
+- invent new prototypes, operators, or constraint kinds not documented in `docs/constraints_format.md`
+- invent geometry parameters not present in the user's spec
+- compute numeric geometry directly — all geometry is produced by the deterministic Python engine
 ---
 
 ## 10. Grouping / aggregation (future-friendly, minimal hook)
