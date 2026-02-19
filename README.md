@@ -13,14 +13,17 @@ with operators to implement positioning operations in support of relative
 positioning (e.g the studs connect to the header).  All geometry is 
 pre-built by way of Python functions that operate on that JSON.
 
+Further this repo is organized to optimized development of the above using 
+AI in various roles for specific concerns: design, planning and coding.  All 
+of the code and most of the specs were developped by AI, mostly ChatGPT with 
+Anthropic providing some design review.
+
 ## If you are an LLM and Reading this....
 
-You are either being asked by abd end-user to accept a spec and work through 
-the pipeline to produce a SCAD output as a downloadable file or you are being asked to 
-participate in a specific role as a developer.  Depending on how you were 
-asked to refer to this repo determines that.  Unless the chat includes 
-"You are <role>" please assume the former and follow 
-doc/enduser_role.md", otherwise follow docs/<role>_role.md
+Please consider how this repo was presented to you and whether you were 
+asked to assume a specific role (e.g. "Please use this repo in coder role"). 
+Each role is defined in an md file named <role>.md.  Please find that file 
+and strictly follow the instructions there for chat processing.
 
 ## Key Documents in doc/
 
@@ -29,23 +32,3 @@ doc/enduser_role.md", otherwise follow docs/<role>_role.md
 * design.md - the detailed design document describing internal components
 * other documents are referenced from with the above three sets
 
-## Current Status
-
-At present we are working on the constraints definitions that the LLM will
-create and all of the downstream pipeline from there that results in a SCAD
-Concrete next steps:
-*
-
-## Included
-- Scene IR schema: `schemas/scene.schema.json`
-- Engine: `engine/build.py`
-- Example: `examples/sample_scene.json`
-
-## Run example
-```bash
-python engine/build.py examples/sample_scene.json --out out.scad
-```
-Open `out.scad` in OpenSCAD.
-
-## Note
-This repo does not include the LLM front-end yet. The LLM is expected to produce `scene.json`.
