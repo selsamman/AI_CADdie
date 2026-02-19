@@ -1,5 +1,5 @@
 # DescriptiveCAD – Experimental In-Chat CAD Stack Specification (v0.2 draft)
-Design last revised: 2026-02-19 
+Design last revised: 2026-02-19 (rev2)
 
 This document extends v0.1 with a clearer taxonomy of the building blocks and how they relate.
 It does not fully define every schema field; it defines the *shape of the system* and gives
@@ -341,12 +341,24 @@ Illustrative registry entry:
 
 The assistant's authoring output is `scene_constraints.json` — the LLM-facing constraints format described in `docs/constraints_format.md`. The assistant never authors `scene.json` directly. The compiler (`engine/constraints.py`) performs that expansion deterministically.
 
-The assistant must:
+### Incremental authoring loop
+
+The assistant must author `scene_constraints.json` incrementally, one object at a time, using the following loop:
+
+1. Define the next object from the spec in `scene_constraints.json`
+2. Run `engine/features.py` against the current scene state to obtain the updated feature catalog
+3. Confirm the available feature handles before proceeding
+4. Use only handles present in the current catalog when defining subsequent objects
+5. Repeat until all objects are defined
+
+This loop ensures the assistant never references a feature that does not exist, and catches errors at the earliest possible point rather than at final compilation.
+
+### The assistant must:
 - choose from registered prototypes and constraint kinds only (see `docs/constraints_format.md`)
 - fill required fields only — ask for clarification rather than infer missing parameters
 - reference only features of previously defined objects (see `docs/requirements.md` section 5)
 - produce `scene_constraints.json` that validates against `schemas/scene_constraints/scene_constraints.schema.json`
-- run the compiler to validate constraints before returning output; correct any errors at the constraints level
+- run the compiler to validate the complete constraints file before returning output; correct any errors at the constraints level
 
 The assistant must not:
 - invent new prototypes, operators, or constraint kinds not documented in `docs/constraints_format.md`
