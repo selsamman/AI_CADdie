@@ -98,7 +98,21 @@ Instructions must refer only to filenames and relative paths.
 
 ---
 
-## 5. Core design principle
+## 5. Governing principles for object positioning
+
+These rules apply to all scene authoring, whether by a human or an LLM, and are enforced at compile time:
+
+- Every object must declare how it is positioned. Positioning with no declared reference is an error.
+- Positioning must reference only named features of objects that have already been defined earlier in the scene. Dependency order is mandatory.
+- Forward references — referencing an object or feature that has not yet been defined — are errors.
+- References to features that do not exist on the referenced object are errors.
+- There are no defaults, fallbacks, or inferred placements for missing or invalid positioning. The system fails explicitly so the error can be corrected at the source.
+
+These principles exist to keep geometry deterministic and to ensure the LLM cannot silently produce wrong output. An error is always preferable to plausible-looking incorrect geometry.
+
+---
+
+## 6. Core design principle
 
 The system is boxed into three strictly separated concepts:
 
@@ -112,7 +126,7 @@ If functionality is missing, a new operation must be introduced.
 
 ---
 
-## 6. Canonical scene representation
+## 7. Canonical scene representation
 
 A canonical scene description file named:
 
@@ -131,7 +145,7 @@ The scene file is produced by the AI session.
 
 ---
 
-## 7. Geometry backend requirements
+## 8. Geometry backend requirements
 
 The geometry backend:
 
@@ -144,7 +158,7 @@ Optional acceleration layers (e.g. shapely, pyclipper) may be added later but mu
 
 ---
 
-## 8. Current geometry capabilities (v0.1)
+## 9. Current geometry capabilities (v0.1)
 
 The following primitive capabilities are required and considered viable in pure Python:
 
@@ -160,7 +174,7 @@ No general polygon boolean operations are required at this stage.
 
 ---
 
-## 9. Semantics and vocabulary
+## 10. Semantics and vocabulary
 
 The following semantics are considered normative:
 
@@ -180,7 +194,7 @@ The following semantics are considered normative:
 
 ---
 
-## 10. Operator system
+## 11. Operator system
 
 Operators are named operations applied in sequence.
 
@@ -200,7 +214,7 @@ Operators must be deterministic and side-effect free.
 
 ---
 
-## 11. Promotion model
+## 12. Promotion model
 
 Two tiers of operators exist:
 
@@ -218,7 +232,7 @@ Tests are required for promotion, not for prototyping.
 
 ---
 
-## 12. Field-driven evolution loop
+## 13. Field-driven evolution loop
 
 When the generated geometry is incorrect:
 
@@ -232,7 +246,7 @@ Ad-hoc geometry fixes in the pipeline are forbidden.
 
 ---
 
-## 13. End-to-end execution protocol
+## 14. End-to-end execution protocol
 
 The instruction.md file inside the bundle must define an explicit protocol such as:
 
@@ -244,7 +258,7 @@ The instruction.md file inside the bundle must define an explicit protocol such 
 
 ---
 
-## 14. First end‑to‑end validation test
+## 15. First end‑to‑end validation test
 
 The first required test is purely mechanical:
 
@@ -254,6 +268,28 @@ The first required test is purely mechanical:
 
 No spec parsing is involved.
 
+
+---
+
+## 16. Requirements for role instructions
+
+Role instructions are implementation artifacts written and tested separately once the design is stable. This section defines what they must accomplish, not how.
+
+The coder role instructions must:
+
+- Prescribe reading the static feature catalog from `docs/constraints_format.md` before authoring any constraints
+- Prescribe an incremental object definition loop: define one object, run the feature catalog to confirm available handles, define the next object using only handles in the current catalog, repeat
+- Prescribe a validation loop after constraints generation: run the compiler, and if validation fails show the errors and correct the constraints before returning any output
+- Define the error handling path clearly: a compile error is corrected at the constraints level, never by patching geometry downstream
+- Define what constitutes a complete and returnable output
+
+The designer role instructions must:
+
+- Prescribe interactive discussion before any revision is made
+- Require a fresh repo upload before any revision pass
+- Restrict changes to design documents and assets only
+
+Instructions are considered correct when a LLM following them reliably produces valid constraints without human intervention on a representative spec. Instruction quality is therefore testable and should be validated against the sample spec before being considered stable.
 
 ---
 
