@@ -1,5 +1,5 @@
 # AICaddie – Experimental In-Chat CAD Stack Specification
-Design last revised: 2026-02-20 7:30am EST
+Design last revised: 2026-02-19 (rev3)
 
 This document provides a clear taxonomy of the building blocks and how they 
 relate. It defines the *shape of the system* and gives small illustrative examples.
@@ -376,4 +376,43 @@ A trim/clip operator does **true footprint geometry**:
 
 The operator does **not** need to create a “triangle offcut” object. Offcuts may exist only as
 optional debug artifacts (tagged) if useful for visualization.
+
+## 12. Runbook — Pipeline Execution
+
+This section defines the exact commands and expected outputs for the constraints-first pipeline. This is the authoritative reference for role instructions and replaces any separate instruction files.
+
+### 12.1 Full pipeline: constraints → SCAD
+
+Single command — compilation and geometry generation are handled internally:
+
+```bash
+python engine/run.py scene_constraints.json out.scad
+```
+
+`engine/run.py` detects that the input is a constraints scene, runs the compiler automatically, then runs the geometry engine. Returns `out.scad`.
+
+If the input is already a resolved `scene.json` (e.g. for debugging), the compile step is skipped and the engine runs directly.
+
+### 12.2 What validation occurs
+
+Two validation gates fire automatically during the pipeline:
+
+**Feature handle validation** — runs during the compile step (`engine/constraints.py`). Every feature handle in the constraints file is validated against the runtime feature catalog. Invalid object references or non-existent feature names produce an error identifying the object id and the failing handle. This is the primary runtime enforcement mechanism.
+
+**Geometry invariants** — run during the build step. The engine checks geometric consistency of resolved objects before emitting SCAD.
+
+Note: the JSON schema files in `schemas/` are authoring references and LLM guidance only. They are not invoked at runtime. The engine is pure Python stdlib and has no jsonschema dependency.
+
+### 12.3 Run regression tests
+
+```bash
+python scene_tests/run_all.py
+```
+
+Compares generated SCAD output against golden files in `scene_tests/golden/`. All tests must pass before a constraints or engine change is considered stable.
+
+### 12.4 Expected outputs
+
+- `out.scad` — the generated OpenSCAD file, returned as a downloadable artifact
+- Errors are reported to stdout with object id and failing constraint; no partial output is written
 

@@ -49,7 +49,7 @@ This is an experimental, non-commercial workflow.
 
 AI session responsibilities:
 
-- read instruction.md from the uploaded bundle
+- read `docs/design.md` section 12 (Runbook) for pipeline execution commands
 - read the user design specification
 - identify ambiguities and propose spec patches
 - generate a canonical scene description (scene.json)
@@ -248,13 +248,12 @@ Ad-hoc geometry fixes in the pipeline are forbidden.
 
 ## 14. End-to-end execution protocol
 
-The instruction.md file inside the bundle must define an explicit protocol such as:
+The pipeline execution protocol is defined in `docs/design.md` section 12 (Runbook). In summary:
 
-1. Read a reference scene.json file from the bundle (for tests), or generate a new one.
-2. Write scene.json to the sandbox.
-3. Run the engine.
-4. Return the generated SCAD file as a downloadable artifact.
-5. Do not inline large outputs.
+1. Author `scene_constraints.json` from the human spec using the constraints format in `docs/constraints_format.md`.
+2. Run `python engine/run.py scene_constraints.json out.scad` — compilation and geometry generation are handled in a single command.
+3. Return `out.scad` as a downloadable artifact. Do not inline SCAD output.
+4. If errors occur, correct them at the constraints level and re-run.
 
 ---
 
