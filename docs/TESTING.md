@@ -6,21 +6,28 @@ Run all tests:
 python -m unittest discover -s tests -v
 ```
 
-The smoke test runs the example scene through `engine/build.py` and asserts an `out.scad` is produced.
+This is run anytime the LLM changes any code in the repo.  Tests are added 
+as needed to /tests.  Testing is not considered part of the design and it
+is the responsiblity of the coder role to add additional tests that conform 
+to Python's built-in unittest framework.
 
 ## Scene regression cases (human-verified)
 
-As development progresses, we keep sample scenes that generate SCAD outputs for manual
-inspection in OpenSCAD.
+In order to test constraints and the entire generationAs progresses,
+we keep constraint scenes, generate scads for them and manually verify
+that they are correct.  
 
-Generate SCAD for all cases into `/tmp/aicaddie_scene_tests`:
 
 ```bash
 python -m scene_tests.run_all
 ```
+This creates the SCADs for all cases into `/tmp/aicaddie_scene_tests`:
 
-Customize output directory and/or file pattern:
+Once they have been verified this is run to move them to scene_tests/golden
 
 ```bash
-python -m scene_tests.run_all --outdir /tmp/aicaddie_scene_tests --pattern "*.scene.json"
+python -m scene_tests.run_all --update-golden
 ```
+
+The regular unittest described above will now run the scene tests and 
+compare them to golden.
