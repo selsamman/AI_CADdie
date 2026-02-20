@@ -1,9 +1,8 @@
 # AICaddie – Experimental In-Chat CAD Stack Specification
-Design last revised: 2026-02-19 14:00EST
+Design last revised: 2026-02-20 7:30am EST
 
-This document extends v0.1 with a clearer taxonomy of the building blocks and how they relate.
-It does not fully define every schema field; it defines the *shape of the system* and gives
-small illustrative examples.
+This document provides a clear taxonomy of the building blocks and how they 
+relate. It defines the *shape of the system* and gives small illustrative examples.
 
 This project is intentionally scoped to browser-based AI assistants that support:
 - file upload
@@ -11,7 +10,9 @@ This project is intentionally scoped to browser-based AI assistants that support
 - Python execution
 - downloadable artifacts
 
-All instructions and assets must be contained inside the uploaded ZIP bundle.
+All instructions and assets are contained in this repo and uploaded as a ZIP 
+to the LLM for processing described in the requirements.
+
 
 ---
 
@@ -36,7 +37,7 @@ All design artifacts are chained from this document. Key references:
 
 ## 0.3 Two-stage authoring (LLM-facing constraints → internal scene)
 
-This project now supports a **two-stage** scene description workflow:
+This project supports a **two-stage** scene description workflow:
 
 1. **LLM-facing constraints scene** (`scene_constraints.json`)
    - Small, token-based vocabulary designed for LLM reliability.
@@ -63,19 +64,6 @@ The constraints format is intentionally designed to support a safe “I can’t 
 
 ---
 
-## 0. Quick answer: how “trim” is implemented
-
-A trim/clip operator does **true footprint geometry**:
-
-- It computes a **new 2D polygon footprint** (list of points).
-- It **replaces** the object’s footprint with that new polygon (in the resolved scene state).
-- SCAD output is then dumb rendering: `linear_extrude(height) polygon(points)`.
-
-The operator does **not** need to create a “triangle offcut” object. Offcuts may exist only as
-optional debug artifacts (tagged) if useful for visualization.
-
----
-
 ## 1. Core concepts
 
 ### 1.1 Scene
@@ -92,7 +80,7 @@ A Prototype is a registered “object type” definition that includes:
 - feature rules (what named edges/vertices/planes can be referenced)
 - a resolver (how to turn params into initial geometry, deterministically)
 
-Prototypes live in the bundle and are not invented at runtime.
+Prototypes live in the repo and are not invented at runtime.
 
 ### 1.3 Object instance
 An ObjectInstance is a declared thing in a specific scene.
@@ -109,7 +97,7 @@ An Operator is a registered transformation that:
 - may write named features (references) for later steps
 - must be deterministic
 
-Operators live in the bundle and are not invented at runtime.
+Operators live in the repo and are not invented at runtime.
 
 ### 1.5 Resolved scene state
 The Python engine executes the operator list in order and maintains an internal “resolved state”:
@@ -299,9 +287,9 @@ The key idea:
 
 ---
 
-## 7. Prototype registry (bundle content)
+## 7. Prototype registry
 
-The bundle contains a registry that maps prototype names to:
+The repo contains a registry that maps prototype names to:
 - JSON schema for params
 - resolver function name (Python)
 - named feature rules
@@ -319,7 +307,7 @@ Illustrative registry entry:
 
 ---
 
-## 8. Operator registry (bundle content)
+## 8. Operator registry
 
 Similarly, operators are registered with:
 - JSON schema for op instance
@@ -377,5 +365,15 @@ This is out of scope for v0.2 implementation, but the data model should not prec
 - `instantiate_group` operator: applies a rigid transform and emits namespaced object IDs
 
 ---
+## 11 Design Notes
+### How “trim” is implemented
 
-End of v0.2 draft.
+A trim/clip operator does **true footprint geometry**:
+
+- It computes a **new 2D polygon footprint** (list of points).
+- It **replaces** the object’s footprint with that new polygon (in the resolved scene state).
+- SCAD output is then dumb rendering: `linear_extrude(height) polygon(points)`.
+
+The operator does **not** need to create a “triangle offcut” object. Offcuts may exist only as
+optional debug artifacts (tagged) if useful for visualization.
+

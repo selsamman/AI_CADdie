@@ -25,10 +25,14 @@ asked to assume a specific role (e.g. "Please use this repo in coder role").
 Each role is defined in an md file named <role>.md.  Please find that file 
 and strictly follow the instructions there for chat processing.
 
-## Key Documents in doc/
+## Documentation
+
+All documentation is containted in the docs directory.  The root documents are:
 
 * <role>_role.md - describe the role AI is to play when working with this repo
 * requirements.md - the requirements for end-user processing
 * design.md - the detailed design document describing internal components
-* other documents are referenced from with the above three sets
+* test.md - describes the testing methodology and details for how to tests
+
+Other documents are referenced from with the above three
 
