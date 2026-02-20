@@ -20,19 +20,19 @@ Anthropic providing some design review.
 
 ## If you are an LLM and Reading this....
 
-Please consider how this repo was presented to you and whether you were 
-asked to assume a specific role (e.g. "Please use this repo in coder role"). 
-Each role is defined in an md file named <role>.md.  Please find that file 
-and strictly follow the instructions there for chat processing.
+**Default — no role specified:** If you have been given this repo and a design specification with no other instruction, process the spec using `docs/role_production.md`. That document defines the complete procedure for going from a human spec to a SCAD output.
+
+**Role-based sessions:** If you have been asked to assume a specific role (e.g. "Please use this repo in coder role"), find the corresponding `docs/role_<name>.md` file and follow its instructions exclusively for this session.
 
 ## Documentation
 
 All documentation is containted in the docs directory.  The root documents are:
 
-* <role>_role.md - describe the role AI is to play when working with this repo
-* requirements.md - the requirements for end-user processing
-* design.md - the detailed design document describing internal components
-* test.md - describes the testing methodology and details for how to tests
+* `role_production.md` - default operating mode: process a spec and produce SCAD output
+* `role_<name>.md` - development roles (designer, coder, project_coordinator) for repo maintenance
+* `requirements.md` - the requirements for end-user processing
+* `design.md` - the detailed design document including the pipeline runbook
+* `constraints_format.md` - the LLM-facing constraints vocabulary and feature catalog
 
 Other documents are referenced from with the above three
 
