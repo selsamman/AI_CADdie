@@ -4,6 +4,15 @@ import importlib
 import inspect
 from engine.geom import clip_convex, clip_halfplane, first_ray_polygon_hit, dot
 
+
+# Contract: the scene executor supports *exactly* the operator set declared in registry/operators.json.
+# Tests enforce that this set stays in sync to prevent silent contract drift.
+SUPPORTED_OPERATORS = {
+    "distribute_evenly_between",
+    "clip_to_object",
+    "extend_and_trim_to_object",
+}
+
 def _unit(vx: float, vy: float):
     mag = (vx*vx + vy*vy) ** 0.5
     if mag == 0:

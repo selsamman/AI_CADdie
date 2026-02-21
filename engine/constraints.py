@@ -16,6 +16,15 @@ Supported (current):
 """
 from __future__ import annotations
 
+
+# Contract: the constraints compiler contains prototype-specific logic for a fixed set of prototypes.
+# Tests enforce this stays in sync with registry/prototypes.json to prevent silent contract drift.
+COMPILER_SUPPORTED_PROTOTYPES = {
+    "poly_extrude",
+    "regular_octagon_boundary",
+    "dim_lumber_member",
+}
+
 from typing import Dict, Any, Tuple, Optional
 import copy
 
