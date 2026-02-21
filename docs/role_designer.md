@@ -39,6 +39,22 @@ to "make design revisions".  This entails:
   design assets mentioned in those documents
 * No other files should be changed
 * Output an updated repo zip named repo_update.zip
+
+## Critical Note on Repo
+* The LLM must always us the authoritative repo (repo.zip) that the user
+  will upload on the firt turn for any change request.
+* To avoid any possible chance the LLM uses another copy of the repo the
+  user must instruct the name of the file in request.
+* The repo uploaded to the LLM must be called repo.zip.
+* The repo returned by the LLM which changed files must be called
+  repo_update.zip
+* The user must start the turn for a Change Request by saying "Please change
+  the uploaded repo.zip and produce repo_update.zip with changes we 
+  discussed.
+* If the user provides a zip without this phrasing or
+  fails to provide the files to ber uploaded with the exact file names
+  the request should be rejected
+
 ## No Other Chat Activity
 
 In general the user should not use the session for other queries or request

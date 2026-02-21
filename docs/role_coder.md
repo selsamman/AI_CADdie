@@ -16,12 +16,12 @@ diff of exactly what was changed from the baseline.
 ## Initialization
 
 After the repo is uploaded, for the first time a very brief summary of the 
-possible interactions (from this document) is output.  Only two interactions 
+possible interactions (from this document) is output.  Two main interactions 
 are possible:
 * A change request which presents a repo and instructions
-* A revised change request which presents the same repo a description of the 
-  failure or clarification of the task and a diff of changes made since the 
-  baseline repo that is uploaded.
+* A revised change request which a description of the failure or 
+  clarification of the task and a diff of changes made since the 
+  baseline repo that was uploaded.
 
 ## Change Request
 
@@ -34,9 +34,6 @@ are possible:
   will be named repo.zip.
 
 * The change request is processed with these considerations
-
-  * repo.zip is treated as the complete and only baseline. The LLM
-  must not rely on prior versions of the repository from earlier turns.
 
   * The LLM may modify any files necessary to implement the requested change 
    correctly. However, the LLM must not make additional changes that are not required to satisfy the change request and its success criteria. Avoid opportunistic refactoring, cleanup, formatting-only edits, or behavioral changes outside the scope of the request.
@@ -60,7 +57,7 @@ are possible:
   * What the user should expect as a result of these changes
   * The names of the files that were added or modified
   * The names of test files added or modified
-  * A complete repo named repo_update.zip with the identical structure as repo.zip
+  * A revised repo with the changed files. 
 
 * If the change is succesful the user is expected to commit changes to the repo
 
@@ -86,6 +83,26 @@ This interaction discipline prevents drift and loss of focus on fixes:
 ## Failure to Implement Change Request
 
 If the LLM cannot safely implement the requested change, it must respond with an explanation and must not return repo_update.zip.
+## Critical Note on Repo
+* The LLM must always us the authoritative repo (repo.zip) that the user
+  will upload on the firt turn for any change request.
+* To avoid any possible chance the LLM uses another copy of the repo the
+  user must instruct the name of the file in request.
+* The repo uploaded to the LLM must be called repo.zip.
+* The repo returned by the LLM which changed files must be called
+  repo_update.zip
+* For Revised Change Request the user must provide what_changed.txt which
+  are all the changes made relative to the repo.zip uploaded.
+* The user must start the turn for a Change Request by saying "Please change
+  the uploaded repo.zip and produce repo_update.zip with changes as follows:  
+  <instructions for change> ....
+* The user must start the turn for a Revised Change Request by saying "Please
+  change the uploaded repo.zip, noting changes you made in what_changed.txt and
+  produce repo_update.zip, with revisions to changes as follows:  
+  <instructions for change> ....
+* If the user provides a zip without phrasing in one of the forms above or
+  fails to provide the files to ber uploaded with the exact file names
+  the request should be rejected
 
 ## Test Change Policy
 
@@ -100,11 +117,3 @@ If the LLM cannot safely implement the requested change, it must respond with an
 * Test changes must be minimal and directly required by the change request success criteria. Avoid opportunistic refactoring or reorganizing tests.
 
 * If the requested verification cannot be expressed using existing test patterns, the LLM must not implement a new methodology implicitly. Instead it must propose a separate change request describing the needed test methodology changes.
-
-## No Other Chat Activity
-
-In general the user should not use the session for other queries or request
-to keep as clean as possible a context window for coding.  The LLM
-will not enforce this for now but append responses with,
-
-"For future reference: Non-code-related queries and requests are best handled in another session"
