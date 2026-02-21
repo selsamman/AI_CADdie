@@ -1,5 +1,5 @@
 # AICaddie – Experimental In-Chat CAD Stack Specification
-Design last revised: 2026-02-19 (rev4)
+Design last revised: 2026-02-19 (rev5)
 
 This document provides a clear taxonomy of the building blocks and how they 
 relate. It defines the *shape of the system* and gives small illustrative examples.
@@ -289,10 +289,13 @@ The key idea:
 
 ## 7. Prototype registry
 
-The repo contains a registry that maps prototype names to:
+The repo contains a registry (`registry/prototypes.json`) that maps prototype names to:
 - JSON schema for params
 - resolver function name (Python)
-- named feature rules
+
+The registry is the authoritative list of available prototypes and is the source an LLM should consult to determine what prototype names are valid. All three prototypes must be registered: `poly_extrude`, `regular_octagon_boundary`, and `dim_lumber_member`.
+
+**Feature catalog authority:** The registry does not define features. Features are defined and published at runtime by `engine/features.py`, which is the sole authority on what feature handles are valid for a given object. The LLM-facing static enumeration in `docs/constraints_format.md` is derived from `engine/features.py` and must be kept in sync with it. The registry `features` field is not used by the engine and must not be present.
 
 Illustrative registry entry:
 
@@ -300,8 +303,7 @@ Illustrative registry entry:
 {
   "name": "regular_octagon_boundary",
   "params_schema": "schemas/prototypes/regular_octagon_boundary.schema.json",
-  "resolver": "prototypes.regular_octagon_boundary.resolve",
-  "features": ["NorthWall", "NorthEastWall", "...", "NorthVertex", "..."]
+  "resolver": "engine.prototypes.regular_octagon_boundary.resolve"
 }
 ```
 
