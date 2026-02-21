@@ -2,43 +2,16 @@
   {
     "name": "poly_extrude",
     "schema_path": "schemas/prototypes/poly_extrude.schema.json",
-    "resolver": "engine.prototypes.poly_extrude.resolve",
-    "features": [
-      "edges:indexed",
-      "vertices:indexed"
-    ]
+    "resolver": "engine.prototypes.poly_extrude.resolve"
   },
   {
     "name": "regular_octagon_boundary",
     "schema_path": "schemas/prototypes/regular_octagon_boundary.schema.json",
-    "resolver": "engine.prototypes.regular_octagon_boundary.resolve",
-    "features": [
-      "NorthWall",
-      "NorthEastWall",
-      "EastWall",
-      "SouthEastWall",
-      "SouthWall",
-      "SouthWestWall",
-      "WestWall",
-      "NorthWestWall",
-      "NorthVertex",
-      "NorthEastVertex",
-      "EastVertex",
-      "SouthEastVertex",
-      "SouthVertex",
-      "SouthWestVertex",
-      "WestVertex",
-      "NorthWestVertex"
-    ]
+    "resolver": "engine.prototypes.regular_octagon_boundary.resolve"
   },
   {
     "name": "dim_lumber_member",
     "schema_path": "schemas/prototypes/dim_lumber_member.schema.json",
-    "resolver": "engine.prototypes.dim_lumber_member.resolve",
-    "features": [
-      "start",
-      "end",
-      "centerline"
-    ]
+    "resolver": "engine.prototypes.dim_lumber_member.resolve"
   }
 ]
