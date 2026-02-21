@@ -1,125 +1,108 @@
 # Working Plan — DescriptiveCAD / AICaddie (v0.2)
-Plan last revised: 2026-02-20 13:00 America/New_York (-0500)
-Baseline: new repo.zip (uploaded in this chat)
-Canonical production pipeline: docs/design.md §0.3 (“Two-stage authoring”)
-Dev-only process: TESTING.md (root)
+Plan last revised: 2026-02-21 12:30 America/New_York (-0500)
+Baseline: repo.zip uploaded in this chat
+Canonical production pipeline: docs/design.md §0.3 (two-stage authoring)
+Dev-only process: docs/TESTING.md
 
-## What changed vs the prior plan (based on your notes + new baseline)
-- README.md stays **high-level** (no detailed pipeline steps).
-- Production pipeline is **defined only** in docs/design.md §0.3 (and supporting docs/*).
-- TESTING.md is **development-only**; it should not be treated as production workflow.
-- You’ve already taken a pass at docs; this plan is now about verifying alignment and closing concrete gaps.
-
----
-
-# Phase 1 — Make the v0.2 contract internally consistent (design ↔ docs ↔ code ↔ registries ↔ schemas)
-Goal: Everything that the system *claims* is supported (in design/docs) is actually supported by the shipped code and registries, with no contradictions.
-Success criteria:
-- docs/design.md §0.3 remains the single “production pipeline” definition.
-- docs/constraints_format.md and docs/requirements.md match the shipped schemas + compiler behavior.
-- registries (operators/prototypes) match what engine imports/uses and what schemas exist.
-
-## Concrete gaps detected in the new baseline (must resolve)
-### Gap A — `dim_lumber_member` is implemented + documented, but not registered
-Evidence in repo:
-- `engine/constraints.py` explicitly lists `dim_lumber_member` as “Supported (current)” and imports it.
-- `docs/constraints_format.md` documents `dim_lumber_member` feature handles (`centerline`, `start`, `end`).
-- `schemas/prototypes/dim_lumber_member.schema.json` exists.
-- **But** `registry/prototypes.json` currently lists only: `poly_extrude`, `regular_octagon_boundary` (length=2).
-
-Task outcomes (choose one path; implement fully):
-- [ ] Path A (likely): **Register `dim_lumber_member`** in `registry/prototypes.json` with schema_path + resolver + features list.
-- [ ] Path B (if intentionally removed): remove/disable `dim_lumber_member` consistently:
-  - update `engine/constraints.py` supported list/imports,
-  - update docs/constraints_format.md (remove dim_lumber_member section),
-  - remove schema + prototype module or clearly de-scope.
-
-### Gap B — Feature catalog definitions must agree (registry.features ↔ docs/constraints_format ↔ engine/features.py)
-Task outcomes:
-- [ ] Verify `engine/features.py` returns the same handles documented in `docs/constraints_format.md` for:
-  - `regular_octagon_boundary`
-  - `poly_extrude`
-  - `dim_lumber_member` (if kept)
-- [ ] Where mismatch exists: fix ONE source of truth and sync the others (prefer runtime behavior + registries; docs should describe reality).
-
-### Gap C — “Safe failure mode / unresolved” is described in design (§0.3) but must be explicitly staged
-Task outcomes:
-- [ ] Confirm the current schema/compiler support for “unresolved” (design mentions it; compiler contains the term).
-- [ ] If partially implemented: document the *exact* current behavior (what is allowed, what happens downstream).
-- [ ] If not implemented: add a small, explicit milestone statement in docs/design.md or docs/constraints_format.md:
-  - “unresolved is planned; current behavior is hard fail with clear errors” OR implement minimal unresolved pass-through.
+## Planner notes
+- README is not a detailed documentation home.
+- Production pipeline lives in docs/design.md §0.3.
+- Development gates live in docs/TESTING.md.
+- This plan should live at docs/plan.md and be the single active plan artifact.
 
 ---
 
-# Phase 2 — Compiler correctness + determinism for constraints → scene
-Goal: The constraints compiler is deterministic, fails early with actionable errors, and produces internal `scene.json` that validates against the internal schema.
+# Phase 0 — Confirm “what is canonical” (doc roles and boundaries)
+Goal: Make sure each doc has one job, with no duplicated “pipeline” descriptions outside design §0.3.
 Success criteria:
-- For a fixed `scene_constraints.json`, generated `scene.json` is byte-stable (ordering, float formatting policy if applicable).
-- Errors identify: object id, constraint index/path, and the invalid token/handle.
+- docs/design.md §0.3 is the only place that defines the production pipeline.
+- docs/constraints_format.md defines only the constraints contract (schema + semantics), not workflow.
+- docs/TESTING.md defines only dev workflows/tests, not production.
+- docs/requirements.md defines goals/constraints, not implementation details.
 
 Tasks:
-- [ ] Establish determinism rules for compiler output (ordering of objects, operator applications, and any derived lists).
-- [ ] Upgrade error messages in `engine/constraints.py` to include:
-  - object id
-  - which constraint (by index or json-path-ish location)
-  - offending handle/token and a short “expected” hint
-- [ ] Add negative tests (unit tests) that assert error text contains the above.
+- [ ] Scan docs for any “how to run production pipeline” instructions outside design §0.3 and convert to links/pointers.
 
 ---
 
-# Phase 3 — Schema and registry coherence (operators + prototypes)
-Goal: Any operator/prototype that appears in registries has: schema + handler/resolver + at least one example scene.
+# Phase 1 — Contract consistency: design ↔ constraints_format ↔ registries ↔ schemas ↔ compiler
+Goal: Remove contradictions in the LLM-facing contract so “write constraints → compile → scene → scad” is predictable.
 Success criteria:
-- `registry/operators.json` entries all have valid schema paths and callable handlers.
-- `registry/prototypes.json` entries all have schema paths and callable resolvers.
-- Each registry entry has at least one minimal example.
+- Anything the compiler says is “supported” is present in registries and has schemas.
+- Anything in registries has a schema and an implementation path.
+- constraints_format matches actual compiler behavior and available prototypes/operators.
 
 Tasks:
-- [ ] Verify each operator in `registry/operators.json`:
-  - `clip_to_object`
-  - `extend_and_trim_to_object`
-  - `distribute_evenly_between`
-    has: schema + working handler + at least one constraints-driven example.
-- [ ] Verify each prototype in `registry/prototypes.json` has: schema + resolver + features.
-- [ ] Fix any orphan schemas or orphan code (schema exists but not registered, or registered but missing schema).
+- [ ] Prototype registry consistency check
+  - Ensure every prototype referenced in:
+    - docs/constraints_format.md
+    - the constraints compiler supported list (if such a list exists)
+      is present in `registry/prototypes.json` with correct schema_path and resolver.
+  - Ensure there are no “orphan” prototype schemas (schema exists but no registry entry) unless intentionally marked internal/legacy.
+
+- [ ] Operator registry consistency check (constraints-stage operators)
+  - Ensure each operator in `registry/operators.json` has:
+    - a schema in `schemas/operators/`
+    - a compiler implementation path
+  - Ensure docs/constraints_format.md operator list matches `registry/operators.json`.
+
+- [ ] Feature handle contract check
+  - For each prototype, verify that:
+    - docs/constraints_format.md handles == runtime handles produced/accepted (engine/features / prototype code)
+  - If there is any mismatch: fix runtime + registry first, then sync docs.
 
 ---
 
-# Phase 4 — Examples + regression coverage (development quality gate)
-Goal: A small suite of canonical examples covers every operator and prototype with deterministic SCAD output.
+# Phase 2 — Lock the contract with automated checks (dev gates)
+Goal: Prevent Phase 1 contradictions from creeping back in.
 Success criteria:
-- `python -m scene_tests.run_all` produces stable SCAD for all included cases.
-- At least one constraints-first example exists per operator and per prototype.
+- A test fails if a registry references a missing schema or non-importable handler/resolver.
+- A test fails if constraints compiler advertises support for an operator/prototype not in registries.
 
 Tasks:
-- [ ] Create/verify minimal `scene_constraints.json` examples for:
-  - each operator (at least one)
-  - each prototype (at least one)
-- [ ] Add/update golden `.scad` outputs for regression inspection.
-- [ ] Ensure example naming and placement make it obvious which feature/operator is being exercised.
+- [ ] Add “registry integrity” unit test:
+  - All schema paths exist
+  - All handlers/resolvers import
+- [ ] Add “compiler advertised support ⊆ registries” unit test:
+  - supported prototypes subset of registry/prototypes.json
+  - supported operators subset of registry/operators.json
+- [ ] Add at least two negative constraints compile tests:
+  - unknown prototype
+  - unknown operator
+    and assert error messages include object id + location + expected values hint.
 
-Note: This is a dev-only gate; it should be referenced from TESTING.md, not framed as production workflow.
+(These are referenced from docs/TESTING.md; not production workflow.)
 
 ---
 
-# Phase 5 — Documentation hardening (no new “bundle” doc; docs stay role-aligned)
-Goal: Keep docs minimal but unambiguous; avoid duplicating the pipeline outside design §0.3.
+# Phase 3 — Minimal canonical examples + regression scenes (constraints → scad)
+Goal: Every constraints operator and prototype has at least one deterministic example and golden output.
 Success criteria:
-- docs/design.md §0.3 is the canonical production pipeline.
-- Supporting docs are purely “formats/contracts” (constraints_format, requirements), not alternate process docs.
-- README remains high-level, pointing to design + format docs.
+- For each operator in `registry/operators.json`, there is at least one constraints-based example that reaches SCAD deterministically.
+- For each prototype in `registry/prototypes.json`, there is at least one constraints-based example.
+- `scene_tests.run_all` (or equivalent) is the dev gate.
 
 Tasks:
-- [ ] Ensure README.md stays overview-level and points to:
-  - docs/design.md (pipeline + architecture)
-  - docs/constraints_format.md (LLM-facing contract)
-  - docs/requirements.md (principles / constraints)
-- [ ] Ensure TESTING.md only covers dev gates (unit tests + regression runs), with no “production pipeline” language.
+- [ ] Add/verify one minimal constraints example per operator
+- [ ] Add/verify one minimal constraints example per prototype
+- [ ] Ensure golden SCAD stability rules are documented (ordering/naming/floats) in docs/TESTING.md
 
 ---
 
-## Immediate next step (planner stance)
-Start Phase 1 with **Gap A (dim_lumber_member registration decision)** because it currently creates a three-way contradiction:
-docs + compiler + schema say it exists, but the prototype registry says it doesn’t.
+# Phase 4 — “Unresolved / safe failure mode” (only after contract is clean)
+Goal: Align design §0.3’s stated behavior with implementation.
+Success criteria:
+- Docs state exactly what happens today (hard fail vs unresolved pass-through).
+- If unresolved is implemented: schema + compiler + tests cover it.
 
-(Once that’s resolved, Feature Catalog coherence becomes straightforward to validate.)
+Tasks:
+- [ ] Decide: implement minimal unresolved now OR explicitly defer with the exact current behavior documented
+- [ ] Add one regression test for the chosen behavior
+
+---
+
+## Immediate priority order
+1) Phase 1: registry/schema/compiler/doc consistency (prototypes + operators + feature handles)
+2) Phase 2: enforce with tests
+3) Phase 3: examples + golden regressions
+4) Phase 4: unresolved/safe-failure alignment
