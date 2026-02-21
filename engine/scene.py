@@ -1,5 +1,7 @@
 from copy import deepcopy
-from engine.prototypes import poly_extrude, regular_octagon_boundary, dim_lumber_member
+from functools import lru_cache
+import importlib
+import inspect
 from engine.geom import clip_convex, clip_halfplane, first_ray_polygon_hit, dot
 
 def _unit(vx: float, vy: float):
@@ -11,17 +13,49 @@ def _unit(vx: float, vy: float):
 def _resolve_object(obj, registries):
     proto = obj["prototype"]
     params = obj.get("params", {})
-    if proto == "poly_extrude":
-        geom = poly_extrude.resolve(params)
-    elif proto == "regular_octagon_boundary":
-        geom = regular_octagon_boundary.resolve(params)
-    elif proto == "dim_lumber_member":
-        geom = dim_lumber_member.resolve(params, registries)
-    else:
-        raise ValueError(f"Unknown prototype: {proto}")
+
+    resolver_fn = _get_prototype_resolver_fn(proto, registries)
+    geom = _call_resolver(resolver_fn, params, registries)
     out = deepcopy(obj)
     out["geom"] = geom
     return out
+
+
+def _call_resolver(resolver_fn, params: dict, registries: dict):
+    """Call a prototype resolver with the appropriate signature.
+
+    Convention:
+      - Some resolvers accept (params)
+      - Others accept (params, registries)
+    """
+    sig = inspect.signature(resolver_fn)
+    # Prefer the richer signature if supported.
+    if len(sig.parameters) >= 2:
+        return resolver_fn(params, registries)
+    return resolver_fn(params)
+
+
+@lru_cache(maxsize=128)
+def _import_attr(path: str):
+    """Import and return an attribute given a dotted path like 'pkg.mod.func'."""
+    if not path or "." not in path:
+        raise ValueError(f"Invalid resolver path: {path!r}")
+    mod_path, attr = path.rsplit(".", 1)
+    mod = importlib.import_module(mod_path)
+    try:
+        return getattr(mod, attr)
+    except AttributeError as e:
+        raise ValueError(f"Resolver '{path}' not found") from e
+
+
+def _get_prototype_resolver_fn(proto_name: str, registries: dict):
+    protos = (registries or {}).get("prototypes", {})
+    if proto_name not in protos:
+        raise ValueError(f"Unknown prototype (not in registry/prototypes.json): {proto_name}")
+    resolver_path = protos[proto_name].get("resolver")
+    if not resolver_path:
+        raise ValueError(f"Prototype '{proto_name}' is missing 'resolver' in registry/prototypes.json")
+    return _import_attr(resolver_path)
 
 def build_scene(scene: dict, registries: dict) -> dict:
     # Split objects into concrete objects vs operator-generated templates.
