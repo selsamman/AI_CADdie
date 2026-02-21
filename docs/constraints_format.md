@@ -47,32 +47,11 @@ The feature catalog is the authoritative list of valid feature handles for a giv
 
 **The LLM must treat the catalog as sequential and ordered.** An object may only reference features of objects defined earlier in the scene. This is enforced at compile time.
 
-### 4.1 Static features for known prototypes
+**The catalog is the sole source of truth for valid feature handles.** The LLM must query `engine/features.py` after defining each object to obtain the current catalog rather than relying on any static enumeration. This applies equally to standard prototypes and irregular poly_extrude objects with named edges.
 
-The following features are published automatically by each prototype. These are stable and can be used directly when authoring constraints.
+### 4.1 Named edges on irregular poly_extrude objects
 
-**`regular_octagon_boundary`**
-
-Walls (use as segments for span and trim operations):
-`wall:North`, `wall:NorthEast`, `wall:East`, `wall:SouthEast`, `wall:South`, `wall:SouthWest`, `wall:West`, `wall:NorthWest`
-
-Vertices (use as points for edge-distance operations):
-`vertex:North`, `vertex:NorthEast`, `vertex:East`, `vertex:SouthEast`, `vertex:South`, `vertex:SouthWest`, `vertex:West`, `vertex:NorthWest`
-
-**`poly_extrude` (cuboid or irregular polygon)**
-
-Standard bbox-derived faces (available on all poly_extrude objects):
-`face:front` (min Y), `face:back` (max Y), `face:left` (min X), `face:right` (max X), `center`
-
-Named edges declared in the object definition (see section 4.2) are also available.
-
-**`dim_lumber_member`**
-
-`centerline`, `start`, `end`
-
-### 4.2 Named edges on irregular poly_extrude objects
-
-A `poly_extrude` object whose geometry cannot be fully described by bbox-derived faces may declare named edges in its definition. Named edges are specified as a `named_edges` map from a chosen name to a pair of vertex indices (zero-based, matching the `points` array order):
+A `poly_extrude` object whose geometry cannot be fully described by its standard prototype features may declare named edges in its definition. Named edges are specified as a `named_edges` map from a chosen name to a pair of vertex indices (zero-based, matching the `points` array order):
 
 ```json
 {
@@ -94,10 +73,6 @@ Named edges are then available as feature handles for subsequent objects:
 - `OldHearth.edge:chimney_face`
 
 Objects that do not publish any relevant named features cannot be used as positioning references by other objects. This is enforced at compile time.
-
-### 4.3 Relationship between static doc and runtime validation
-
-This document provides the static feature reference the LLM needs to author valid constraints. The runtime catalog in `engine/features.py` validates what the LLM actually produced. Both are necessary: the static doc gives the LLM a reasonable chance of authoring correctly; the runtime validator catches any errors before they reach the geometry engine.
 
 ---
 

@@ -1,5 +1,5 @@
 # AICaddie – Experimental In-Chat CAD Stack Specification
-Design last revised: 2026-02-19 (rev5)
+Design last revised: 2026-02-19 (rev6)
 
 This document provides a clear taxonomy of the building blocks and how they 
 relate. It defines the *shape of the system* and gives small illustrative examples.
