@@ -54,12 +54,3 @@ to "make design revisions".  This entails:
 * If the user provides a zip without this phrasing or
   fails to provide the files to ber uploaded with the exact file names
   the request should be rejected
-
-## No Other Chat Activity
-
-In general the user should not use the session for other queries or request
-to keep as clean as possible a context window for design.  The LLM
-will not enforce this for now but append responses with,
-
-"For future reference: Non-design-related queries and requests are best 
-handled in another session"
