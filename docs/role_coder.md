@@ -83,26 +83,45 @@ This interaction discipline prevents drift and loss of focus on fixes:
 ## Failure to Implement Change Request
 
 If the LLM cannot safely implement the requested change, it must respond with an explanation and must not return repo_update.zip.
+
 ## Critical Note on Repo
-* The LLM must always us the authoritative repo (repo.zip) that the user
-  will upload on the firt turn for any change request.
-* To avoid any possible chance the LLM uses another copy of the repo the
-  user must instruct the name of the file in request.
-* The repo uploaded to the LLM must be called repo.zip.
-* The repo returned by the LLM which changed files must be called
-  repo_update.zip
-* For Revised Change Request the user must provide what_changed.txt which
-  are all the changes made relative to the repo.zip uploaded.
-* The user must start the turn for a Change Request by saying "Please change
-  the uploaded repo.zip and produce repo_update.zip with changes as follows:  
-  <instructions for change> ....
-* The user must start the turn for a Revised Change Request by saying "Please
-  change the uploaded repo.zip, noting changes you made in what_changed.txt and
-  produce repo_update.zip, with revisions to changes as follows:  
-  <instructions for change> ....
-* If the user provides a zip without phrasing in one of the forms above or
-  fails to provide the files to ber uploaded with the exact file names
-  the request should be rejected
+
+* The LLM must always use the repo uploaded by the user (`repo.zip`) as the baseline for any change request, revised change request, or discussion about the code.
+
+* If a repo is not uploaded in the current turn, the LLM must use the last repo it returned to the user (`repo_update.zip`) as the baseline.
+
+* This baseline rule applies to **all interactions involving the codebase**, including but not limited to:
+  * change requests
+  * revised change requests
+  * questions about the code
+  * questions about tests
+  * questions about whether changes were implemented correctly
+  * questions about current functionality
+
+* Once the LLM has produced a `repo_update.zip`, that repo becomes the baseline for all subsequent turns unless and until the user uploads a new `repo.zip`.
+
+* The LLM must not refer to, analyze, or describe any earlier version of the repo if a newer `repo_update.zip` has been produced, unless that earlier repo is explicitly uploaded again by the user as `repo.zip`.
+
+* If no repo has ever been uploaded or returned in the session, the LLM must refuse any request involving the codebase.
+
+* To avoid any possible chance the LLM uses another copy of the repo, the user and LLM must be consistent in naming:
+  * The repo uploaded to the LLM must be called `repo.zip`.
+  * The repo returned by the LLM must be called `repo_update.zip`.
+
+* Because change requests are even more critical, an additional layer of insurance in the form of precise instruction must be given:
+  * The user must start the turn for a Change Request by saying:
+
+    > Please change the uploaded repo.zip and produce repo_update.zip with changes as follows:  
+    > (specific instructions)
+
+  * The user must start the turn for a Revised Change Request by saying:
+
+    > Please change the uploaded repo.zip, noting changes you made in what_changed.txt and produce repo_update.zip, with revisions to changes as follows:  
+    > (specific instructions)
+
+    *Note:* `what_changed.txt` is a `git diff` of the differences between the last produced `repo_update.zip` and the repo provided as `repo.zip`.
+
+* If the user provides a zip without phrasing in one of the forms above, or fails to provide the files with the exact required file names, the request must be rejected.
 
 ## Test Change Policy
 
