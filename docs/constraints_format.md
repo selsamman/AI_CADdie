@@ -119,6 +119,23 @@ Minimal example (chimney 52" wide, 47" deep, back against the North wall):
 
 ---
 
+### 4.3 Shape vocabulary — mapping spec language to prototypes
+
+When reading a human design spec, the LLM must map common shape descriptions to the correct registered prototype before authoring any object. The prototype list is authoritative; no prototype may be invented or inferred beyond those listed here.
+
+| Spec language | Prototype | Use when |
+|---|---|---|
+| cuboid, rectangular solid, box, block, rectangular platform, rectangular pad, rectangular masonry | `rect_solid` | the object has a rectangular footprint and later objects will reference its corners or faces by name |
+| irregular polygon, irregular quadrilateral, irregular solid, non-rectangular shape, any solid whose footprint cannot be described as a rectangle | `poly_extrude` | the footprint has more than four sides or is not a rectangle; also acceptable for rectangles whose corners and faces will never be referenced by later objects |
+| regular octagon room, octagonal room boundary, sunken room, octagonal boundary | `regular_octagon_boundary` | the object is the room boundary and is a regular octagon |
+| joist, sleeper, stud, board, beam, rafter, framing member, dimensional lumber, any linear framing member | `dim_lumber_member` | the object is a linear framing member with a standard lumber profile |
+
+When a rectangular solid could be expressed as either `rect_solid` or `poly_extrude`, always prefer `rect_solid` if any later object in the spec references a corner or face of this object. If uncertain, prefer `rect_solid` for any named masonry or structural object and `poly_extrude` only for irregular shapes.
+
+If a shape described in the spec does not match any prototype in this table, do not invent a prototype. Stop and ask the user for clarification before proceeding.
+
+---
+
 ## 5. Constraint vocabulary (implemented)
 
 ### 5.1 `offset_from_feature`
