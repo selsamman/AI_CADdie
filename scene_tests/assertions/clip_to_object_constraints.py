@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from scene_tests.assertions._util import assert_has_object
+"""Scene regression assertions: clip_to_object_constraints
 
+Human visual-check notes (OpenSCAD):
+  - Boundary (Octagon): You should see the regular 8-sided outline with flat-to-flat span 167".
+  - FarPost (poly_extrude): A small rectangular post far to the EAST (x ~ 195..205), clearly outside the Octagon.
+    It’s there as a “tempting” out-of-bounds target for the sleeper’s unconstrained extent.
+  - LongSleeper (dim_lumber_member): A long 2x4-ish member running E–W, originating from a point on the Octagon’s West wall.
+    Before clipping, its extent tries to span toward the FarPost, so it *wants* to stick out of the Octagon on the east side.
+  - What you’re checking visually: After clip_to_object, the LongSleeper geometry should NOT protrude outside the Octagon.
+    The sleeper should appear truncated exactly at the Octagon boundary; no vertices / edges should be visible beyond the Octagon outline.
+"""
 
 def _is_inside_convex(poly: list[list[float]], pt: tuple[float, float], *, tol: float = 1e-6) -> bool:
     """Return True if pt lies inside-or-on a convex polygon (CCW or CW)."""

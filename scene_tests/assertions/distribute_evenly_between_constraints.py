@@ -2,6 +2,20 @@ from __future__ import annotations
 
 from scene_tests.assertions._util import assert_almost_equal, assert_has_object
 
+"""Scene regression assertions: distribute_evenly_between_constraints
+
+Human visual-check notes (OpenSCAD):
+  - A and B (poly_extrude): Two small square markers centered near x ~ 0 and x ~ 100 (both around y ~ 0).
+    These define the endpoints for distribution (centroid-to-centroid).
+  - StudTemplate (dim_lumber_member, role=template): Not necessarily rendered as a final object; it defines the
+    member shape/orientation (2x4, “north” direction, length ~ 10).
+  - Generated studs: You should see THREE studs: Stud_1, Stud_2, Stud_3.
+  - What you’re checking visually: The studs should be placed evenly along the straight line from A’s centroid to B’s centroid:
+      * Stud_1 at ~25% (x ~ 25)
+      * Stud_2 at ~50% (x ~ 50)
+      * Stud_3 at ~75% (x ~ 75)
+    They should share the template’s orientation (pointing “north”) and appear evenly spaced between A and B.
+"""
 
 def _centroid(fp: list[list[float]]) -> tuple[float, float]:
     xs = [float(p[0]) for p in fp]

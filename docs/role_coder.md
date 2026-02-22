@@ -123,15 +123,18 @@ If the LLM cannot safely implement the requested change, it must respond with an
 
 * If the user provides a zip without phrasing in one of the forms above, or fails to provide the files with the exact required file names, the request must be rejected.
 
-## Test Change Policy
+## Test Change Policy (test.md)
 
 * The LLM must run all tests listed in test.md.
 
-* When adding or updating tests, the LLM must extend existing test patterns 
-  already used in the repository. The LLM must not introduce a new testing 
-  framework, runner, or methodology unless explicitly requested as part of 
-  the change request.  New testing methodologies or frameworks would be 
+* When adding or updating tests, the LLM must extend existing test patterns  
+  already used in the repository. The LLM must not introduce a new testing  
+  framework, runner, or methodology unless explicitly requested as part of  
+  the change request. New testing methodologies or frameworks would be  
   created as a change request which includes updates to test.md
+
+* When adding or updating tests, the LLM must review .md and update it only 
+  if required to accurately reflect the tests that must be run. The LLM must not create new standalone documentation files for tests unless explicitly instructed as part of the change request.
 
 * Test changes must be minimal and directly required by the change request success criteria. Avoid opportunistic refactoring or reorganizing tests.
 
