@@ -1,0 +1,85 @@
+{
+  "scene_type": "constraints",
+  "anchor_id": "Octagon",
+  "objects": [
+    {
+      "id": "Octagon",
+      "prototype": "regular_octagon_boundary",
+      "params": {
+        "span_flat_to_flat_in": 167,
+        "origin": [
+          0,
+          0
+        ],
+        "north_wall_normal": [
+          0,
+          1
+        ],
+        "wall_height_in": 13.75
+      }
+    },
+    {
+      "id": "FarPost",
+      "prototype": "poly_extrude",
+      "params": {
+        "footprint": [
+          [
+            195,
+            -10
+          ],
+          [
+            205,
+            -10
+          ],
+          [
+            205,
+            10
+          ],
+          [
+            195,
+            10
+          ]
+        ],
+        "extrusion": {
+          "z_base": 0,
+          "height": 4
+        }
+      }
+    },
+    {
+      "id": "LongSleeper",
+      "prototype": "dim_lumber_member",
+      "params": {
+        "profile": {
+          "id": "2x4"
+        },
+        "orientation": {
+          "wide_face": "down"
+        },
+        "placement_constraints": {
+          "axis": "E-W",
+          "origin": {
+            "kind": "point_on_edge_from_vertex",
+            "edge": "Octagon.wall:West",
+            "vertex": "Octagon.vertex:SouthWest",
+            "distance_in": 30
+          },
+          "extent": {
+            "kind": "span_between_hits",
+            "from": "Octagon.wall:West",
+            "to": "FarPost.face:right"
+          }
+        }
+      }
+    }
+  ],
+  "operators": [
+    {
+      "op": "clip_to_object",
+      "clip_object_id": "Octagon",
+      "target_ids": [
+        "LongSleeper"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "scene_type": "constraints",
+  "anchor_id": "Octagon",
+  "objects": [
+    {
+      "id": "Octagon",
+      "prototype": "regular_octagon_boundary",
+      "params": {
+        "span_flat_to_flat_in": 167,
+        "origin": [0, 0],
+        "north_wall_normal": [0, 1],
+        "wall_height_in": 13.75
+      }
+    },
+    {
+      "id": "A",
+      "prototype": "poly_extrude",
+      "params": {
+        "footprint": [[-1, -1], [1, -1], [1, 1], [-1, 1]],
+        "extrusion": {"z_base": 0, "height": 4}
+      }
+    },
+    {
+      "id": "B",
+      "prototype": "poly_extrude",
+      "params": {
+        "footprint": [[99, -1], [101, -1], [101, 1], [99, 1]],
+        "extrusion": {"z_base": 0, "height": 4}
+      }
+    },
+    {
+      "id": "StudTemplate",
+      "role": "template",
+      "prototype": "dim_lumber_member",
+      "params": {
+        "profile": {"id": "2x4"},
+        "orientation": {"wide_face": "down"},
+        "placement": {
+          "direction": "north",
+          "length": 10
+        },
+        "z_base": 0
+      }
+    }
+  ],
+  "operators": [
+    {
+      "op": "distribute_evenly_between",
+      "template_object_id": "StudTemplate",
+      "between_object_ids": ["A", "B"],
+      "count": 3,
+      "id_prefix": "Stud_"
+    }
+  ]
+}
