@@ -13,5 +13,10 @@
     "name": "dim_lumber_member",
     "schema_path": "schemas/prototypes/dim_lumber_member.schema.json",
     "resolver": "engine.prototypes.dim_lumber_member.resolve"
+  },
+  {
+    "name": "rect_solid",
+    "schema_path": "schemas/prototypes/rect_solid.schema.json",
+    "resolver": "engine.prototypes.rect_solid.resolve"
   }
 ]

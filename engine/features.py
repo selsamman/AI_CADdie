@@ -42,6 +42,18 @@ def list_features_for_object(obj: dict) -> List[str]:
                 feats.append(f"edge:{k}")
     elif proto == "dim_lumber_member":
         feats += ["centerline","start","end"]
+    elif proto == "rect_solid":
+        feats += [
+            "corner:back_left",
+            "corner:back_right",
+            "corner:front_left",
+            "corner:front_right",
+            "face:front",
+            "face:back",
+            "face:left",
+            "face:right",
+            "center",
+        ]
     return feats
 
 def build_feature_catalog(resolved_scene: dict) -> dict:
@@ -68,7 +80,7 @@ def resolve_feature_point(obj: dict, feature: str) -> Point:
     _require_feature(obj, feature)
     proto = obj.get("prototype")
     geom = obj.get("geom", {})
-    if feature == "center":
+    if feature == "center" and proto != "rect_solid":
         poly = geom["footprint"]
         mnx,mny,mxx,mxy = _bbox(poly)
         return ((mnx+mxx)/2.0, (mny+mxy)/2.0)
@@ -84,6 +96,25 @@ def resolve_feature_point(obj: dict, feature: str) -> Point:
             return tuple(geom["start"])  # type: ignore
         if feature == "end":
             return tuple(geom["end"])  # type: ignore
+    if proto == "rect_solid":
+        fp = geom["footprint"]
+        if feature.startswith("corner:"):
+            # Indices are defined by engine/prototypes/rect_solid.py (do not change):
+            # [0] back-left, [1] back-right, [2] front-right, [3] front-left
+            name = feature.split(":", 1)[1]
+            idx_map = {
+                "back_left": 0,
+                "back_right": 1,
+                "front_right": 2,
+                "front_left": 3,
+            }
+            if name not in idx_map:
+                raise ValueError(f"Unknown rect_solid corner feature: {feature}")
+            return tuple(fp[idx_map[name]])  # type: ignore
+        if feature == "center":
+            xs = [float(p[0]) for p in fp]
+            ys = [float(p[1]) for p in fp]
+            return (sum(xs) / 4.0, sum(ys) / 4.0)
     raise ValueError(f"Feature '{feature}' is not a point feature for object '{obj['id']}'")
 
 def resolve_feature_segment(obj: dict, feature: str) -> Segment:
@@ -131,6 +162,20 @@ def resolve_feature_segment(obj: dict, feature: str) -> Segment:
         if i < 0 or j < 0 or i >= len(poly) or j >= len(poly):
             raise ValueError(f"Named edge '{name}' indices out of range for '{obj['id']}'")
         return (tuple(poly[i]), tuple(poly[j]))  # type: ignore
+
+    if proto == "rect_solid" and feature.startswith("face:"):
+        # Indices are defined by engine/prototypes/rect_solid.py (do not change):
+        # [0] back-left, [1] back-right, [2] front-right, [3] front-left
+        fp = geom["footprint"]
+        f = feature.split(":", 1)[1]
+        if f == "back":
+            return (tuple(fp[0]), tuple(fp[1]))  # type: ignore
+        if f == "right":
+            return (tuple(fp[1]), tuple(fp[2]))  # type: ignore
+        if f == "front":
+            return (tuple(fp[2]), tuple(fp[3]))  # type: ignore
+        if f == "left":
+            return (tuple(fp[3]), tuple(fp[0]))  # type: ignore
     raise ValueError(f"Feature '{feature}' is not a segment feature for object '{obj['id']}'")
 
 def resolve_feature_polygon(obj: dict, feature: str) -> Poly:

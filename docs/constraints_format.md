@@ -74,6 +74,49 @@ Named edges are then available as feature handles for subsequent objects:
 
 Objects that do not publish any relevant named features cannot be used as positioning references by other objects. This is enforced at compile time.
 
+### 4.2 rect_solid
+
+`rect_solid` is a simple rectangular prism prototype.
+
+Params:
+
+- `width_in` (required)
+- `depth_in` (required)
+- `origin` (required): `[x,y]` center of the **back** face in plan space
+- `back_normal` (optional, default `[0,1]`): unit vector pointing from interior toward the back wall
+- `height_in` (required)
+- `z_base` (optional)
+
+Feature handles:
+
+- Point features:
+  - `corner:back_left`, `corner:back_right`, `corner:front_left`, `corner:front_right`
+  - `center`
+- Segment features:
+  - `face:front`, `face:back`, `face:left`, `face:right`
+
+Notes:
+
+- "back" is the face whose outward normal matches `back_normal`.
+- "left"/"right" are defined looking from front toward back.
+
+Minimal example (chimney 52" wide, 47" deep, back against the North wall):
+
+```json
+{
+  "id": "Chimney",
+  "prototype": "rect_solid",
+  "params": {
+    "width_in": 52,
+    "depth_in": 47,
+    "origin": [0, 83.5],
+    "back_normal": [0, 1],
+    "height_in": 120,
+    "z_base": 0
+  }
+}
+```
+
 ---
 
 ## 5. Constraint vocabulary (implemented)

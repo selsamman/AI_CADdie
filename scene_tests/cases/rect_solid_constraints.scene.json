@@ -1,0 +1,40 @@
+{
+  "scene_type": "constraints",
+  "anchor_id": "Octagon",
+  "objects": [
+    {
+      "id": "Octagon",
+      "prototype": "regular_octagon_boundary",
+      "params": {
+        "span_flat_to_flat_in": 167,
+        "origin": [
+          0,
+          0
+        ],
+        "north_wall_normal": [
+          0,
+          1
+        ],
+        "wall_height_in": 13.75
+      }
+    },
+    {
+      "id": "Chimney",
+      "prototype": "rect_solid",
+      "params": {
+        "width_in": 52,
+        "depth_in": 47,
+        "origin": [
+          0,
+          83.5
+        ],
+        "back_normal": [
+          0,
+          1
+        ],
+        "height_in": 120
+      }
+    }
+  ],
+  "operators": []
+}

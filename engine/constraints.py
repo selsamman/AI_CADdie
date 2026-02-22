@@ -23,12 +23,13 @@ COMPILER_SUPPORTED_PROTOTYPES = {
     "poly_extrude",
     "regular_octagon_boundary",
     "dim_lumber_member",
+    "rect_solid",
 }
 
 from typing import Dict, Any, Tuple, Optional
 import copy
 
-from engine.prototypes import poly_extrude, regular_octagon_boundary, dim_lumber_member
+from engine.prototypes import poly_extrude, regular_octagon_boundary, dim_lumber_member, rect_solid
 from engine.geom import clip_halfplane, ray_segment_intersection
 
 from engine.features import (
@@ -246,6 +247,8 @@ def _resolve_support_objects(scene_constraints: dict, *, registries: Optional[di
             placement = params.get("placement") or {}
             if "start" in placement and "length" in placement:
                 geom = dim_lumber_member.resolve(params, registries=registries)
+        elif proto == "rect_solid":
+            geom = rect_solid.resolve(params, registries=registries)
         oo = copy.deepcopy(o)
         if geom is not None:
             oo["geom"] = geom
