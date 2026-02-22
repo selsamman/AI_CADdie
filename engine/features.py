@@ -35,6 +35,11 @@ def list_features_for_object(obj: dict) -> List[str]:
     elif proto == "poly_extrude":
         # For now: bbox-derived faces in plan.
         feats += ["face:front","face:back","face:left","face:right","center"]
+        # Optional: named edges (documented in docs/constraints_format.md §4.1)
+        named = (obj.get("params", {}) or {}).get("named_edges")
+        if isinstance(named, dict):
+            for k in named.keys():
+                feats.append(f"edge:{k}")
     elif proto == "dim_lumber_member":
         feats += ["centerline","start","end"]
     return feats
@@ -93,6 +98,12 @@ def resolve_feature_segment(obj: dict, feature: str) -> Segment:
         a = poly[i]
         b = poly[(i+1) % 8]
         return (a,b)
+
+    if proto == "dim_lumber_member" and feature == "centerline":
+        # Rationale: Several constraints (e.g., ray_hit) can use a member's centerline as the
+        # target segment for intersection.
+        # Human reviewer expects: the returned segment runs from the member's start to end points.
+        return (tuple(geom["start"]), tuple(geom["end"]))  # type: ignore
     if proto == "poly_extrude" and feature.startswith("face:"):
         poly = geom["footprint"]
         mnx,mny,mxx,mxy = _bbox(poly)
@@ -105,6 +116,21 @@ def resolve_feature_segment(obj: dict, feature: str) -> Segment:
             return ((mnx,mny),(mnx,mxy))
         if f == "right":   # max x
             return ((mxx,mny),(mxx,mxy))
+
+    if proto == "poly_extrude" and feature.startswith("edge:"):
+        # Named edge resolved by vertex indices into the footprint.
+        name = feature.split(":", 1)[1]
+        named = (obj.get("params", {}) or {}).get("named_edges")
+        if not isinstance(named, dict) or name not in named:
+            raise ValueError(f"Named edge '{name}' not found for object '{obj['id']}'")
+        idx_pair = named[name]
+        if not (isinstance(idx_pair, list) and len(idx_pair) == 2):
+            raise ValueError(f"Named edge '{name}' must be a [i,j] pair")
+        i, j = int(idx_pair[0]), int(idx_pair[1])
+        poly = geom["footprint"]
+        if i < 0 or j < 0 or i >= len(poly) or j >= len(poly):
+            raise ValueError(f"Named edge '{name}' indices out of range for '{obj['id']}'")
+        return (tuple(poly[i]), tuple(poly[j]))  # type: ignore
     raise ValueError(f"Feature '{feature}' is not a segment feature for object '{obj['id']}'")
 
 def resolve_feature_polygon(obj: dict, feature: str) -> Poly:

@@ -230,7 +230,7 @@ def _shift_origin_for_reference_edge(
 
 
 
-def _resolve_support_objects(scene_constraints: dict) -> dict:
+def _resolve_support_objects(scene_constraints: dict, *, registries: Optional[dict]) -> dict:
     """Resolve only prototypes needed for feature geometry during compilation."""
     out = {"objects": []}
     for o in scene_constraints.get("objects", []):
@@ -241,6 +241,11 @@ def _resolve_support_objects(scene_constraints: dict) -> dict:
             geom = poly_extrude.resolve(params)
         elif proto == "regular_octagon_boundary":
             geom = regular_octagon_boundary.resolve(params)
+        elif proto == "dim_lumber_member" and isinstance(params.get("placement"), dict):
+            # Only resolve members that are already fully placed (template objects may omit start).
+            placement = params.get("placement") or {}
+            if "start" in placement and "length" in placement:
+                geom = dim_lumber_member.resolve(params, registries=registries)
         oo = copy.deepcopy(o)
         if geom is not None:
             oo["geom"] = geom
@@ -273,7 +278,7 @@ def compile_scene_constraints(scene_constraints: dict, registries: Optional[dict
     ):
         return scene
 
-    support = _resolve_support_objects(scene)
+    support = _resolve_support_objects(scene, registries=registries)
     obj_index = _index_objects(support)
 
     # Default Z placement: for constraint-authored scenes, treat all solid z-bases as

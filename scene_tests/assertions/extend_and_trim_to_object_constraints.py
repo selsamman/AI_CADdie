@@ -22,9 +22,18 @@ def assert_scene(resolved_scene: dict) -> None:
     fp = sleeper["geom"]["footprint"]
     post_fp = post["geom"]["footprint"]
 
-    # Post is an axis-aligned rectangle; its "left" face is min-x.
+    # Rationale: The Post is the trim target; its left face defines the expected termination plane.
+    # Human reviewer expects: Sleeper ends exactly on the Post's left face (flush abutment).
     post_min_x = min(float(x) for x, _y in post_fp)
 
-    # extend_and_trim_to_object should trim Sleeper so its max-x matches the Post's left face.
+    # Rationale: extend_and_trim_to_object (current v0.2) trims only; it should shorten the
+    # sleeper so the far end aligns to the target face.
+    # Human reviewer expects: Sleeper stops at Post, not at FarPost.
     sleeper_max_x = max(float(x) for x, _y in fp)
     assert_almost_equal(sleeper_max_x, post_min_x, tol=1e-4)
+
+    # Rationale: trimming should not move the sleeper's origin side on the west wall.
+    # Human reviewer expects: west end stays at the wall; only the east end is shortened.
+    sleeper_min_x = min(float(x) for x, _y in fp)
+    if sleeper_min_x > -80.0:
+        raise AssertionError("Expected Sleeper west end to remain near the Octagon west wall")

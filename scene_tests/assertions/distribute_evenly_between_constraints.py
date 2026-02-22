@@ -30,7 +30,9 @@ def assert_scene(resolved_scene: dict) -> None:
     ax, ay = _centroid(a["geom"]["footprint"])
     bx, by = _centroid(b["geom"]["footprint"])
 
-    # Expect 3 studs at 25%, 50%, 75% between centroids.
+    # Rationale: distribute_evenly_between should place copies at evenly spaced interpolation
+    # parameters between the anchor centroids.
+    # Human reviewer expects: 3 studs evenly spaced between A and B, with matching orientation.
     for i, t in enumerate((0.25, 0.5, 0.75), start=1):
         sid = f"Stud_{i}"
         stud = assert_has_object(resolved_scene, sid)
@@ -42,5 +44,13 @@ def assert_scene(resolved_scene: dict) -> None:
         ex = ax + (bx - ax) * t
         ey = ay + (by - ay) * t
 
-        assert_almost_equal(sx, ex, tol=1e-6)
-        assert_almost_equal(sy, ey, tol=1e-6)
+        # Rationale: placement.start is the canonical "anchor point" for the member centerline.
+        # Human reviewer expects: Stud_{i} appears centered at the expected interpolated point.
+        assert_almost_equal(sx, ex, tol=1e-6, msg=f"{sid} start.x should be interpolated")
+        assert_almost_equal(sy, ey, tol=1e-6, msg=f"{sid} start.y should be interpolated")
+
+        # Rationale: Generated objects must have concrete geometry emitted.
+        # Human reviewer expects: each Stud_{i} is visible as a small rectangular member.
+        fp = stud.get("geom", {}).get("footprint")
+        if not (isinstance(fp, list) and len(fp) == 4):
+            raise AssertionError(f"Expected {sid} to have a 4-point rectangular footprint")

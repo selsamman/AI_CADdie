@@ -139,6 +139,11 @@ def clip_convex(subject: Poly, clipper: Poly) -> Poly:
     """
     if not subject or not clipper:
         return []
+
+    # Defensive contract: this routine is only correct for convex clippers.
+    # Several operators (e.g., clip_to_object) depend on this guarantee.
+    if not _is_convex_polygon(clipper):
+        raise ValueError("clip_convex: clipper polygon must be convex")
     keep_left = is_ccw(clipper)  # CCW => inside is left of each directed edge
     out = list(subject)
     m = len(clipper)
@@ -162,6 +167,36 @@ def clip_convex(subject: Poly, clipper: Poly) -> Poly:
                     out.append(_line_intersection(prev, cur, a, b))
             prev, prev_in = cur, cur_in
     return out
+
+
+def _is_convex_polygon(poly: Poly) -> bool:
+    """Return True iff `poly` is convex in 2D.
+
+    - Tolerant of winding direction (CW/CCW)
+    - Allows collinear consecutive edges
+    - Rejects degenerate (all-collinear) polygons
+    """
+    n = len(poly)
+    if n < 3:
+        return False
+
+    sign = 0
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        x3, y3 = poly[(i + 2) % n]
+        dx1, dy1 = (x2 - x1, y2 - y1)
+        dx2, dy2 = (x3 - x2, y3 - y2)
+        z = _cross(dx1, dy1, dx2, dy2)
+        if abs(z) <= 1e-10:
+            continue
+        s = 1 if z > 0 else -1
+        if sign == 0:
+            sign = s
+        elif s != sign:
+            return False
+
+    return sign != 0
 
 def point_in_convex(p: Point, poly: Poly) -> bool:
     """Returns True if point is inside/on a convex polygon (either winding)."""

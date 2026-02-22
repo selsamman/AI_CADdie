@@ -49,12 +49,14 @@ def _assert_regular_octagon_footprint(fp: list[list[float]], span_flat_to_flat_i
 
 
 def assert_scene(resolved_scene: dict) -> None:
-    # regular_octagon_boundary
+    # Rationale: Baseline prototype sanity check for the canonical upright regular octagon.
+    # Human reviewer expects: an upright (non-rotated) octagon boundary with correct proportions.
     octagon = assert_has_object(resolved_scene, "Octagon")
     oct_fp = octagon.get("geom", {}).get("footprint")
     _assert_regular_octagon_footprint(oct_fp, span_flat_to_flat_in=167.0)
 
-    # poly_extrude
+    # Rationale: poly_extrude footprint + extrusion propagation (including z_base visualization lift).
+    # Human reviewer expects: NewHearth is a 40" wide rectangle with front edge at y=0.
     hearth = assert_has_object(resolved_scene, "NewHearth")
     hearth_fp = hearth.get("geom", {}).get("footprint")
     if hearth_fp != [[-20, 20], [20, 20], [20, 0], [-20, 0]]:
@@ -66,7 +68,9 @@ def assert_scene(resolved_scene: dict) -> None:
     # Note: z_base is lifted by the boundary visualization layer (1.0")
     assert_almost_equal(float(extr.get("z_base")), 1.0, tol=1e-6, msg="NewHearth z_base should be 1.0")
 
-    # dim_lumber_member
+    # Rationale: offset_from_feature + span_between_hits should place a sleeper wall-to-wall
+    # with the requested reference edge alignment.
+    # Human reviewer expects: HearthSleeper spans the full room width and sits 2" south of the hearth.
     hs = assert_has_object(resolved_scene, "HearthSleeper")
     fp = hs.get("geom", {}).get("footprint")
     if not (isinstance(fp, list) and len(fp) == 4):
