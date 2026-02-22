@@ -5,6 +5,7 @@ import glob
 import os
 import shutil
 import sys
+import importlib
 from pathlib import Path
 
 
@@ -20,6 +21,25 @@ def _default_outdir() -> Path:
 def _read_text(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def _maybe_run_scene_assertions(case_name: str, resolved_scene: dict) -> None:
+    """If a per-scene assertion module exists, run it.
+
+    Convention:
+      scene_tests/assertions/<case_name>.py defines:
+        def assert_scene(resolved_scene: dict) -> None
+    """
+    mod_name = f"scene_tests.assertions.{case_name}"
+    try:
+        mod = importlib.import_module(mod_name)
+    except ModuleNotFoundError:
+        return
+
+    fn = getattr(mod, "assert_scene", None)
+    if fn is None:
+        raise AssertionError(f"{mod_name} exists but does not define assert_scene(resolved_scene)")
+    fn(resolved_scene)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"No scene cases found at: {pattern}")
         return 2
 
-    from engine.run import run_file
+    from engine.run import run_file_with_resolved
 
     failures: list[str] = []
     missing_golden: list[str] = []
@@ -86,10 +106,12 @@ def main(argv: list[str] | None = None) -> int:
                 break
 
         out_path = outdir / f"{name}.scad"
+        out_scene_path = outdir / f"{name}.resolved.json"
         golden_path = golden_dir / f"{name}.scad"
 
         try:
-            run_file(path, str(out_path))
+            _scad_path, resolved = run_file_with_resolved(path, str(out_path), str(out_scene_path))
+            _maybe_run_scene_assertions(name, resolved)
         except Exception as e:
             failures.append(f"[FAIL] {base}: {e}")
             continue

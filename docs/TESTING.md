@@ -21,7 +21,18 @@ that they are correct.
 ```bash
 python -m scene_tests.run_all
 ```
-This creates the SCADs for all cases into `/tmp/aicaddie_scene_tests`:
+This creates the SCADs for all cases into `./tmp/scene_tests_out` and also writes
+the resolved scene output (JSON) alongside each SCAD as `*.resolved.json`.
+
+Per-scene geometry assertions can be added in `scene_tests/assertions/<case>.py`
+as:
+
+```python
+def assert_scene(resolved_scene: dict) -> None:
+    ...
+```
+
+These assertions are executed as part of `scene_tests.run_all`.
 
 Once they have been verified this is run to move them to scene_tests/golden
 
@@ -31,3 +42,7 @@ python -m scene_tests.run_all --update-golden
 
 The regular unittest described above will now run the scene tests and 
 compare them to golden.
+
+Note: The unittest suite includes a wrapper that runs `scene_tests.run_all`, so
+`python -m unittest discover -s tests -v` enforces both golden SCAD comparisons
+and per-scene geometry assertions.
