@@ -136,3 +136,39 @@ If the LLM cannot safely implement the requested change, it must respond with an
 * Test changes must be minimal and directly required by the change request success criteria. Avoid opportunistic refactoring or reorganizing tests.
 
 * If the requested verification cannot be expressed using existing test patterns, the LLM must not implement a new methodology implicitly. Instead it must propose a separate change request describing the needed test methodology changes.
+
+## Test Execution Verification Requirement
+
+* The LLM must run all tests listed in test.md in the sandbox.
+
+* The LLM must report the test execution summary, including:
+
+  * number of tests run
+  * number passed
+  * number failed
+
+The coder must base its pass/fail statement solely on actual execution results.
+
+## Test Failure Correction Requirement
+
+If any tests fail, the LLM must:
+
+* Attempt to fix the code to resolve the failures
+* Rerun the tests
+* Repeat this process until:
+
+  * all tests pass, OR
+  * the LLM determines that the failures cannot be safely fixed without clarification, OR
+  * 3 correction attempts have been performed
+
+The LLM must limit corrections strictly to changes required to satisfy the change request and failing tests, and must not introduce unrelated refactoring or redesign.
+
+The LLM must report how many correction attempts were performed.
+
+If the LLM cannot achieve passing tests, the LLM will still produce repo_update.zip and explain the failure. A Revised Change Request as described in this document will be used to either change the requirements or suggest a different testing approach.
+
+## Extraneous Change Verification Requirement
+
+Once the repo_update.zip is produced the LLM must examine all files, added, 
+changed or deleted.  Any changes or modifications not explicitly required by 
+the changed request should be enumerated.
