@@ -115,7 +115,7 @@ required for correctness.
 - +X = East
 - +Y = North
 - +Z = Up
-- Z=0 is the sunken room floor unless explicitly overridden.
+- Z=0 is the default base plane. Objects are placed at the `z_base` specified in their params. If omitted, `z_base` defaults to 0.
 
 ### 2.2 Anchor
 Each scene defines an `anchor_id`.

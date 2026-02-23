@@ -165,6 +165,16 @@ Minimal example:
 
 ---
 
+## 4.5 Z placement
+
+Z placement is an **authoring responsibility**. The compiler does not infer `z_base` from the anchor object, from constraint geometry, or from any other object in the scene.
+
+- If `z_base` is omitted from a `poly_extrude` or `dim_lumber_member` params block, it defaults to `0`.
+- The LLM must read the design spec and set `z_base` explicitly on each object based on what the spec says about where that object sits vertically.
+- Do not rely on the compiler or engine to "figure out" vertical placement. If the spec says an object sits on top of another, compute `z_base` as the sum of the supporting object's `z_base` and `height` (or equivalent thickness), and write that value explicitly.
+
+---
+
 ## 5. Constraint vocabulary (implemented)
 
 ### 5.1 `offset_from_feature`
