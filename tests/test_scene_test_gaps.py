@@ -454,9 +454,9 @@ class TestSceneTestGaps(unittest.TestCase):
             ],
         }
         resolved = self._resolve(scene)
-        # Boundary visualization layer uses wall_height; derived z_base for solids should be +wall_height.
+        # z_base for solids is taken exactly as authored (no compiler-side lifting).
         zb = float(resolved["objects"]["p"]["geom"]["extrusion"]["z_base"])
-        self.assertAlmostEqual(zb, 12.25, places=6)
+        self.assertAlmostEqual(zb, 0.0, places=6)
 
     def test_gap20_extend_and_trim_source_edge_out_of_range(self):
         scene = {

@@ -55,7 +55,7 @@ def assert_scene(resolved_scene: dict) -> None:
     oct_fp = octagon.get("geom", {}).get("footprint")
     _assert_regular_octagon_footprint(oct_fp, span_flat_to_flat_in=167.0)
 
-    # Rationale: poly_extrude footprint + extrusion propagation (including z_base visualization lift).
+    # Rationale: poly_extrude footprint + extrusion propagation.
     # Human reviewer expects: NewHearth is a 40" wide rectangle with front edge at y=0.
     hearth = assert_has_object(resolved_scene, "NewHearth")
     hearth_fp = hearth.get("geom", {}).get("footprint")
@@ -65,8 +65,7 @@ def assert_scene(resolved_scene: dict) -> None:
     if not isinstance(extr, dict):
         raise AssertionError("NewHearth expected geom.extrusion dict")
     assert_almost_equal(float(extr.get("height")), 10.0, tol=1e-6, msg="NewHearth extrusion height should be 10")
-    # Note: z_base is lifted by the boundary visualization layer (1.0")
-    assert_almost_equal(float(extr.get("z_base")), 1.0, tol=1e-6, msg="NewHearth z_base should be 1.0")
+    assert_almost_equal(float(extr.get("z_base")), 0.0, tol=1e-6, msg="NewHearth z_base should be 0.0")
 
     # Rationale: offset_from_feature + span_between_hits should place a sleeper wall-to-wall
     # with the requested reference edge alignment.
