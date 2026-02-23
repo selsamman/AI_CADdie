@@ -52,6 +52,38 @@ def _resolve_profile(params: Dict[str, Any], registries: Dict[str, Any] | None) 
         raise ValueError(f"Invalid registry entry for {pid}: expected actual=[t,w]")
     return float(actual[0]), float(actual[1])
 
+
+def _resolve_profile_entry(params: Dict[str, Any], registries: Dict[str, Any] | None) -> Dict[str, Any] | None:
+    """Return the resolved registry profile entry dict if one applies.
+
+    If the profile is provided as an explicit actual size, there is no registry
+    entry to consult and this returns None.
+    """
+    profile = params.get("profile", {})
+    if "actual" in profile:
+        return None
+
+    pid = profile.get("id")
+    if not pid:
+        system = profile.get("system", "S4S")
+        nominal = profile.get("nominal")
+        if nominal:
+            pid = f"{system}:{nominal}"
+    if not pid:
+        return None
+
+    if not registries:
+        return None
+    table = registries.get("lumber_profiles", {})
+    # Backwards-compatible shorthand: allow id like "2x6" and interpret as "S4S:2x6"
+    if pid not in table and ":" not in pid:
+        alt = f"S4S:{pid}"
+        if alt in table:
+            pid = alt
+
+    entry = table.get(pid)
+    return entry if isinstance(entry, dict) else None
+
 def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) -> Dict[str, Any]:
     """Resolve a dimensional lumber member into a solid footprint extrusion.
 
@@ -59,8 +91,11 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
     - placement.start is the CENTER of the start/end face in plan view.
     - placement.direction gives the axis along the member length.
     - placement.length is the member length in inches.
-    - orientation.wide_face can be 'down' (default) or 'up'; if 'down', height=thickness.
-      If wide_face == 'down', footprint width = width. If wide_face == 'side', footprint width = thickness.
+    - orientation.wide_face can be 'down'/'up'/'flat' or 'side'/'edge'.
+      Priority for wide_face:
+        1) params.orientation.wide_face if explicitly set
+        2) registry profile default_orientation.wide_face if present
+        3) fallback to 'down'
     """
     t, w = _resolve_profile(params, registries)
 
@@ -78,7 +113,16 @@ def resolve(params: Dict[str, Any], registries: Dict[str, Any] | None = None) ->
         raise ValueError("placement.length must be > 0")
 
     orient = params.get("orientation", {})
-    wide_face = str(orient.get("wide_face", "down")).strip().lower()
+    if isinstance(orient, dict) and "wide_face" in orient:
+        wide_face = str(orient.get("wide_face")).strip().lower()
+    else:
+        entry = _resolve_profile_entry(params, registries)
+        default_wide_face = None
+        if entry:
+            default_orientation = entry.get("default_orientation")
+            if isinstance(default_orientation, dict):
+                default_wide_face = default_orientation.get("wide_face")
+        wide_face = str(default_wide_face if default_wide_face is not None else "down").strip().lower()
 
     if wide_face in ("down", "up", "flat"):
         height = t
