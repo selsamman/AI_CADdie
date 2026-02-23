@@ -48,7 +48,7 @@ The feature catalog is the authoritative list of valid feature handles for a giv
 **The LLM must treat the catalog as sequential and ordered.** An object may only reference features of objects defined earlier in the scene. This is enforced at compile time.
 
 **The catalog is the sole source of truth for valid feature handles.** The LLM must query `engine/features.py` after defining each object to obtain the current catalog rather than relying on any static enumeration. This applies equally to standard prototypes and irregular poly_extrude objects with named edges.
-
+  
 ### 4.1 Named edges on irregular poly_extrude objects
 
 A `poly_extrude` object whose geometry cannot be fully described by its standard prototype features may declare named edges in its definition. Named edges are specified as a `named_edges` map from a chosen name to a pair of vertex indices (zero-based, matching the `points` array order):
