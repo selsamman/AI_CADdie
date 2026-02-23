@@ -12,8 +12,7 @@ role (e.g. "Please use this repo in design role") means that the LLM will strict
 
 ## Initialization
 
-When the repo is uploaded for the first time and the role is signaled the LLM 
-will:
+When the repo is uploaded and the role is signaled the LLM will:
 
 * Read docs/design.md and referenced documents
 * Output a very brief summary of the document
@@ -28,44 +27,27 @@ will:
 ## Discussion Mode
 
 Any free form discussion may take place that pertains to the design.  This 
-is used to develop ideas and decide how the design is to be done or revised.
+is used to develop ideas and decide how the design is to be done or revised. 
+Alternatively clear instructions may be appended in the initial chat "Please 
+use this repo in designer role"
 
 ## Design Revision
 
-Once design ideas or changes have been decided on the LLM will be asked 
-to "make design revisions".  This entails:
-* Ensure that a fresh copy of the repo is uploaded as a zip file (repo.zip)
-* Make the revisions to doc/design, documents referenced by it and specific 
+Once the instructions for change is clear the user may instruct the LLM to 
+"make the changes".  The LLM will then: 
+
+* Make the revisions to docs/design.md, documents referenced by it and specific
   design assets mentioned in those documents
 * No other files should be changed
-* Output an updated repo zip named repo_update.zip
+* Output an updated repo zip named `repo_update.zip`
 
 ## Critical Note on Repo
 
-* The LLM must always use the repo uploaded by the user (`repo.zip`) as the baseline for any change request or discussion about the code.
+* Only one repo is ever uploaded and only one updated repo is ever returned
+  in a session
 
-* If a repo is not uploaded in the current turn, the LLM must use the last repo it returned to the user (`repo_update.zip`) as the baseline.
+* Once a repo is return by the LLM any further request for changes should be
+  rejected and the user told to make the changes in a new session
 
-* This baseline rule applies to **all interactions involving the codebase**, including but not limited to:
-  * change requests
-  * questions about the code
-  * questions about tests
-  * questions about whether changes were implemented correctly
-  * questions about current functionality
-  * discussion of design changes
-
-* Once the LLM has produced a `repo_update.zip`, that repo becomes the baseline for all subsequent turns unless and until the user uploads a new `repo.zip`.
-
-* The LLM must not refer to, analyze, or describe any earlier version of the repo if a newer `repo_update.zip` has been produced, unless that earlier repo is explicitly uploaded again by the user as `repo.zip`.
-
-* If no repo has ever been uploaded or returned in the session, the LLM must refuse any request involving the codebase.
-
-* To avoid any possible chance the LLM uses another copy of the repo, the user and LLM must be consistent in naming:
-  * The repo uploaded to the LLM must be called `repo.zip`.
-  * The repo returned by the LLM must be called `repo_update.zip`.
-
-* The user must start the turn for a Change Request by saying:
-
-  > Please change the uploaded repo.zip and produce repo_update.zip with changes we discussed.
-
-* If the user provides a zip without this phrasing, or fails to provide the files with the exact required file names, the request must be rejected.
+* The LLM must check before processing a change request that it has never
+  returned modified repo as part of a request.

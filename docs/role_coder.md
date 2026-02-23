@@ -15,25 +15,31 @@ diff of exactly what was changed from the baseline.
 
 ## Initialization
 
-After the repo is uploaded, for the first time a very brief summary of the 
-possible interactions (from this document) is output.  Two main interactions 
-are possible:
-* A change request which presents a repo and instructions
-* A revised change request which a description of the failure or 
+The user may optionally append a Change Request or Revised Change Request to 
+the initial instruction "Please use this repo in coder role".  If no change 
+is requested: 
+* A very brief summary of the possible interactions (from this document) is output.
+* Two main interactions are possible:
+  * A change request which presents a repo and instructions
+  * A revised change request which a description of the failure or 
   clarification of the task and a diff of changes made since the 
   baseline repo that was uploaded.
-
+  
 ## Change Request
+* This is triggered with verbiage such as:
+  > Please change the uploaded repository as follows: (specific instructions)
 
-* The repository will be modified on each turn based on specific requests
-  from the user that identify:
+* The specific instructions should say:
     * What specifically should be changed
     * The success criteria for the change
 
-* The user must always supply the baseline repository in zip format which
-  will be named repo.zip.
+* If the instructions are not clear and immediate and do not contain all of 
+  the above they may be developed interactively with the user.  Once agreed 
+  the user instructs that the changes are to be made by saying "Make the
+  Changes"
 
-* The change request is processed with these considerations
+* Once the changes are made they are made with 
+  these considerations
 
   * The LLM may modify any files necessary to implement the requested change 
    correctly. However, the LLM must not make additional changes that are not required to satisfy the change request and its success criteria. Avoid opportunistic refactoring, cleanup, formatting-only edits, or behavioral changes outside the scope of the request.
@@ -65,18 +71,31 @@ are possible:
 
 ## Revised Change Request
 
-When the change request is not successful the change request must be re-done.
-This interaction discipline prevents drift and loss of focus on fixes:
+When the change request is not successful the change request must be re-done. This interaction discipline prevents drift and loss of focus on fixes:
 
-* The user describes the failure and provides logs, screenshots etc.
+* This is triggered with verbiage such as:
+> Please change the uploaded repository, noting changes you made in 
+> what_changed.txt with revisions to changes as follows:(specific instructions)
 
-* The SAME baseline repository as was provided for the original change
-  request that failed is provided for this turn
+* The specific instructions will contain
+  * What specifically should be changed
+  * The success criteria for the change
+  * What was wrong with the changes in what_changed.txt (include logs, 
+    screenshots or a description)
 
-* The output of git diff HEAD is provided (what_changed.txt) so that prior
-  changes that failed are made clear and there is no confusion due to multiple versions of a source file being kept internally
+* If the instructions are not clear and immediate and do not contain all of
+  the above they may be developed interactively with the user.  Once agreed
+  the user instructs that the changes are to be made by saying, "Make the
+  Changes"
 
-* The amended change request is processed with the same considerations and 
+* Note that the user is expect to supply the SAME baseline repository as was 
+  provided for the original change request that failed is provided for this 
+  turn and NOT the repo after the changes were made.
+
+* what_changed.txt is the output of git diff HEAD and is provided so that prior
+  changes that failed are made clear
+
+* The Revised Change Request is processed with the same considerations and 
   with the same outputs as describe in the Change Request section above.
 
 
@@ -86,42 +105,15 @@ If the LLM cannot safely implement the requested change, it must respond with an
 
 ## Critical Note on Repo
 
-* The LLM must always use the repo uploaded by the user (`repo.zip`) as the baseline for any change request, revised change request, or discussion about the code.
+* Only one repo is ever uploaded and only one updated repo is ever returned 
+  in a session
 
-* If a repo is not uploaded in the current turn, the LLM must use the last repo it returned to the user (`repo_update.zip`) as the baseline.
+* Once a repo is return by the LLM any further request for changes should be 
+  rejected and the user told to make the changes in a new session
 
-* This baseline rule applies to **all interactions involving the codebase**, including but not limited to:
-  * change requests
-  * revised change requests
-  * questions about the code
-  * questions about tests
-  * questions about whether changes were implemented correctly
-  * questions about current functionality
+* The LLM must check before processing a change request that it has never 
+  returned modified repo as part of a request.
 
-* Once the LLM has produced a `repo_update.zip`, that repo becomes the baseline for all subsequent turns unless and until the user uploads a new `repo.zip`.
-
-* The LLM must not refer to, analyze, or describe any earlier version of the repo if a newer `repo_update.zip` has been produced, unless that earlier repo is explicitly uploaded again by the user as `repo.zip`.
-
-* If no repo has ever been uploaded or returned in the session, the LLM must refuse any request involving the codebase.
-
-* To avoid any possible chance the LLM uses another copy of the repo, the user and LLM must be consistent in naming:
-  * The repo uploaded to the LLM must be called `repo.zip`.
-  * The repo returned by the LLM must be called `repo_update.zip`.
-
-* Because change requests are even more critical, an additional layer of insurance in the form of precise instruction must be given:
-  * The user must start the turn for a Change Request by saying:
-
-    > Please change the uploaded repo.zip and produce repo_update.zip with changes as follows:  
-    > (specific instructions)
-
-  * The user must start the turn for a Revised Change Request by saying:
-
-    > Please change the uploaded repo.zip, noting changes you made in what_changed.txt and produce repo_update.zip, with revisions to changes as follows:  
-    > (specific instructions)
-
-    *Note:* `what_changed.txt` is a `git diff` of the differences between the last produced `repo_update.zip` and the repo provided as `repo.zip`.
-
-* If the user provides a zip without phrasing in one of the forms above, or fails to provide the files with the exact required file names, the request must be rejected.
 
 ## Test Change Policy (test.md)
 

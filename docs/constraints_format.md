@@ -48,7 +48,7 @@ The feature catalog is the authoritative list of valid feature handles for a giv
 **The LLM must treat the catalog as sequential and ordered.** An object may only reference features of objects defined earlier in the scene. This is enforced at compile time.
 
 **The catalog is the sole source of truth for valid feature handles.** The LLM must query `engine/features.py` after defining each object to obtain the current catalog rather than relying on any static enumeration. This applies equally to standard prototypes and irregular poly_extrude objects with named edges.
-  
+
 ### 4.1 Named edges on irregular poly_extrude objects
 
 A `poly_extrude` object whose geometry cannot be fully described by its standard prototype features may declare named edges in its definition. Named edges are specified as a `named_edges` map from a chosen name to a pair of vertex indices (zero-based, matching the `points` array order):
@@ -133,6 +133,35 @@ When reading a human design spec, the LLM must map common shape descriptions to 
 When a rectangular solid could be expressed as either `rect_solid` or `poly_extrude`, always prefer `rect_solid` if any later object in the spec references a corner or face of this object. If uncertain, prefer `rect_solid` for any named masonry or structural object and `poly_extrude` only for irregular shapes.
 
 If a shape described in the spec does not match any prototype in this table, do not invent a prototype. Stop and ask the user for clarification before proceeding.
+
+### 4.4 `dim_lumber_member` orientation
+
+`dim_lumber_member` accepts an optional `orientation` param controlling how the profile is placed:
+
+- `orientation: { "wide_face": "down" }` — default for most profiles; member lies flat, height equals thickness (e.g. sleeper, plate)
+- `orientation: { "wide_face": "side" }` — member stands on edge, height equals width (e.g. joist, ledger, header)
+
+Some profiles define a `default_orientation` in the registry. When a profile has a default orientation the LLM need not specify `orientation` explicitly — the engine will apply the registry default. The LLM may always override by specifying `orientation` explicitly.
+
+`joist:2x10` defaults to `wide_face: side`. No explicit `orientation` param is required when using this profile.
+
+Minimal example:
+
+```json
+{
+  "id": "LedgerEast",
+  "prototype": "dim_lumber_member",
+  "params": {
+    "profile": { "id": "joist:2x10" },
+    "z_base": 4.25,
+    "placement_constraints": {
+      "axis": "N-S",
+      "origin": { "...constraint..." },
+      "extent": { "...constraint..." }
+    }
+  }
+}
+```
 
 ---
 

@@ -30,10 +30,9 @@
       5.5
     ]
   },
-  "Joist:10x2": {
-    "actual": [
-      1.5,
-      9
-    ]
+  "joist:2x10": {
+    "actual": [1.5, 9.5],
+    "default_orientation": { "wide_face": "side" },
+    "notes": "2x10 dimensional lumber, actual 1.5in thick x 9.5in wide. Default orientation is on edge (wide_face: side) as used for joists, ledgers, and blocking."
   }
 }
